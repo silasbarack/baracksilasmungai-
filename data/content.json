@@ -1,0 +1,37 @@
+{
+  "site":{"brand":"baracksilasmungai","fullName":"BARACK SILAS MUNGAI","description":"Web Developer | Custom Websites & Business Systems","tagline":"Websites that turn business ideas into useful experiences.","location":"Kenya","publicEmail":"","phone":"","whatsapp":"","bookingUrl":""},
+  "seo":{"defaultTitle":"baracksilasmungai — Web Developer & Custom Business Systems","defaultDescription":"Custom websites, booking systems, dashboards, payment integrations and practical business web systems."},
+  "projects":[
+    {"slug":"ticketflow-kenya","title":"TicketFlow Kenya","category":"Booking Systems","status":"Personal product · Active development","role":"Founder / Full-stack developer","summary":"An event-ticketing platform for discovering events, selecting tickets, handling checkout workflows and supporting event organisers.","problem":"Event organisers need a structured way to publish events and customers need a clear path from discovery to ticket purchase.","solution":"A responsive web platform with event discovery, ticket selection, customer accounts, organiser workflows, administration and provider-dependent payment integration.","features":["Event discovery and listings","Ticket categories and checkout flow","QR ticket workflow","Customer and organiser accounts","Admin tools","M-Pesa integration architecture"],"tech":["React","TypeScript","NestJS","PostgreSQL","Prisma","REST APIs"],"liveUrl":"https://ticketflow-frontend-w47s.onrender.com","published":true},
+    {"slug":"zawadimart","title":"ZawadiMart","category":"E-commerce","status":"Demonstration project","role":"Designer / Developer","summary":"A responsive Kenyan e-commerce demonstration showing modern catalogue, product, cart and checkout experiences.","problem":"Demonstrate how a retail business can present products clearly and move customers through a modern shopping experience.","solution":"A polished responsive storefront concept with searchable product presentation, cart interactions and payment-interface demonstrations.","features":["Responsive catalogue","Product detail views","Shopping cart","Checkout interface","M-Pesa payment presentation","Mobile-first navigation"],"tech":["HTML","CSS","JavaScript","Responsive UI"],"liveUrl":"https://zawadimart-premium.onrender.com","published":true}
+  ],
+  "services":[
+    {"id":"business-websites","title":"Business & company websites","purpose":"Present your company professionally and turn visits into useful enquiries.","features":["Responsive page design","Service and company pages","Contact and enquiry flows"]},
+    {"id":"ecommerce","title":"E-commerce websites","purpose":"Present products and support a clear shopping and checkout experience.","features":["Product catalogue","Cart and checkout","Payment-provider integration"]},
+    {"id":"booking","title":"Booking & ticketing systems","purpose":"Manage reservations, tickets or appointments through structured online workflows.","features":["Availability or event listings","Customer booking flow","Admin management"]},
+    {"id":"dashboards","title":"Dashboards & administration tools","purpose":"Give staff a protected operational view of customers, enquiries and activity.","features":["Search and filters","Status workflows","Protected exports"]},
+    {"id":"accounts","title":"Customer accounts & authentication","purpose":"Support secure sign-in and personalised customer experiences.","features":["Registration and login","Password flows","Account areas"]},
+    {"id":"api","title":"API integrations","purpose":"Connect the website to external services where approved access exists.","features":["REST integrations","Webhook handling","Provider configuration"]},
+    {"id":"payments","title":"M-Pesa & card integrations","purpose":"Connect supported payment providers after merchant accounts and credentials are approved.","features":["Checkout integration","Callback handling","Payment status workflows"]},
+    {"id":"redesign","title":"Website redesigns","purpose":"Improve clarity, responsiveness and usability without unnecessary complexity.","features":["UI refresh","Responsive rebuild","Content restructuring"]},
+    {"id":"support","title":"Deployment, maintenance & support","purpose":"Launch reliably and keep agreed technical components maintained.","features":["Deployment","Monitoring options","Technical support"]}
+  ],
+  "pricing":[
+    {"name":"Basic business website","range":"KES 21,000–30,000","detail":"Small informational websites with clear business pages and enquiries."},
+    {"name":"Standard website or system","range":"KES 35,000–70,000","detail":"Sites with databases, dashboards, bookings or authentication."},
+    {"name":"Advanced website or system","range":"KES 70,000–150,000+","detail":"Complex administration, e-commerce, M-Pesa, APIs and deeper workflows."},
+    {"name":"Custom platform","range":"KES 150,000–800,000+","detail":"Multi-role platforms, marketplaces, fintech-style systems and custom products."}
+  ],
+  "faqs":[
+    {"q":"How much does a website cost?","a":"Pricing depends on scope, pages, integrations and complexity. The published ranges are indicative; the final quotation follows a requirements discussion."},
+    {"q":"How long will my project take?","a":"Delivery time depends on scope, feedback cycles, integrations and content readiness. Milestones and target timing are agreed before development."},
+    {"q":"What do you need from me?","a":"Usually your business information, preferred pages, brand assets, content, required features, reference websites and any provider accounts needed for integrations."},
+    {"q":"Will the website work on phones?","a":"Yes. Responsive behaviour is designed and tested for phones, tablets and desktops as part of the agreed scope."},
+    {"q":"Are hosting and domains included?","a":"They are separate unless the quotation explicitly includes them. Hosting, domains, paid plugins, external services and provider fees remain third-party costs."},
+    {"q":"Can you integrate M-Pesa or cards?","a":"Yes, where the chosen provider supports the required integration and the client has an approved merchant account. Provider fees and credentials are separate from development fees."},
+    {"q":"Do you provide maintenance?","a":"Maintenance and technical support can be added separately. Coverage and response times are agreed before the support period begins."},
+    {"q":"What happens at handover?","a":"Agreed source files, deployment access, documentation and training are handed over according to the project scope and payment milestones."}
+  ],
+  "about":{"intro":"I focus on practical digital products: websites that explain a business clearly, capture enquiries and support useful workflows rather than adding technology for its own sake.","principles":["Clear communication","Practical design","Transparent scope and milestones","Responsive implementation","Secure handling of credentials and private data"]},
+  "testimonials":[],"articles":[]
+}
