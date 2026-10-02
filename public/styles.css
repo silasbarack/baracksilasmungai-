@@ -241,6 +241,16 @@ footer{background:var(--navy3);color:#aebfca;padding:60px 0 25px;font-size:14px}
 .notfound{text-align:center;padding:110px 0}
 .big{font-size:120px;font-family:var(--serif);color:var(--teal)}
 
+/* Technology chips */
+.chip.tech{display:inline-flex;align-items:center;gap:9px;padding:6px 15px 6px 6px}
+.blogo{width:28px;height:28px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--brandsoft,var(--soft))}
+.blogo svg{width:17px;height:17px;display:block}
+.chip.tech:not(.concept) .blogo svg path{fill:var(--brand)}
+.chip.tech.invert .blogo{background:var(--navy)}
+.chip.tech.concept .blogo{background:var(--teal-soft)}
+.chip.tech.concept .ico{width:16px;height:16px;color:var(--teal-dark)}
+.card .chips{margin-top:4px}
+
 /* Client reviews */
 .reviews{background:var(--soft)}
 .revgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
