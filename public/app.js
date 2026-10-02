@@ -112,8 +112,8 @@ catch{setStatus(s,'err','Could not reach the server. Check your connection and t
 b.disabled=false;b.textContent=label}
 function sent(f,o,d){const first=e(String(o.name||'').trim().split(/\s+/)[0]||'there'),ch=channels();
 f.outerHTML='<div class="form success" id="sent"><span class="badge">Enquiry received</span><h2>Thank you, '+first+'.</h2><p>'+e(d.message||'Your enquiry was stored successfully.')+'</p><p class="muted">'+
-(d.id?'Reference <b>'+e(String(d.id).slice(0,8))+'</b>. ':'')+
-(d.emailConfigured?(d.emailDelivered?'A confirmation email is on its way to '+e(o.email)+'.':'Email delivery was attempted but may not have arrived — your enquiry is stored either way.'):'Email confirmations are not switched on yet, so I will reply to '+e(o.email)+' directly.')+'</p>'+
+(d.reference||d.id?'Reference <b>'+e(d.reference||String(d.id).slice(0,8).toUpperCase())+'</b>. ':'')+
+(o.preferredContact&&o.preferredContact!=='Email'&&o.phone?'I will contact you on '+e(o.preferredContact)+' at '+e(o.phone)+'. ':'I will reply to '+e(o.email)+'. ')+(d.emailDelivered?'A confirmation email is on its way to '+e(o.email)+'.':'')+'</p>'+
 '<p class="muted">This confirmation is not a binding quotation. Scope, pricing and timing are confirmed separately after the requirements review.</p>'+
 (ch.length?'<ul class="channels">'+ch.slice(0,2).map(x=>'<li>'+channelLink(x)+'</li>').join('')+'</ul>':'')+
 '<div class="actions"><a class="btn teal" href="/portfolio">See recent work →</a><a class="btn ghost" href="'+(o.kind==='quote'?'/contact':'/request-a-quote')+'">'+(o.kind==='quote'?'Ask another question':'Request a full quotation')+' →</a></div></div>';
