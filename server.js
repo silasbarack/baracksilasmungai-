@@ -177,6 +177,7 @@ function rateLimit(key, max, windowMs) {
 }
 function clean(value, max=2000) { return String(value ?? '').trim().replace(/\u0000/g,'').slice(0,max); }
 function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+const CONTACT_METHODS = ['Email', 'Phone', 'WhatsApp'];
 function fingerprint(body) {
   return crypto.createHash('sha256').update([clean(body.email,200).toLowerCase(),clean(body.name,200).toLowerCase(),clean(body.description,1000).toLowerCase()].join('|')).digest('hex');
 }
@@ -223,7 +224,7 @@ app.post('/api/enquiries', async (req,res,next) => {
       businessName: clean(req.body.businessName,160),
       email: clean(req.body.email,180).toLowerCase(),
       phone: clean(req.body.phone,60),
-      preferredContact: clean(req.body.preferredContact,60),
+      preferredContact: CONTACT_METHODS.includes(clean(req.body.preferredContact,60)) ? clean(req.body.preferredContact,60) : 'Email',
       projectType: clean(req.body.projectType,120),
       features: Array.isArray(req.body.features) ? req.body.features.map(x=>clean(x,100)).slice(0,20) : [],
       budget: clean(req.body.budget,100),
@@ -242,6 +243,7 @@ app.post('/api/enquiries', async (req,res,next) => {
     if (!validEmail(e.email)) errors.email = 'Please enter a valid email address.';
     if (e.description.length < 12) errors.description = 'Please describe the project or enquiry in a little more detail.';
     if (e.kind === 'quote' && !e.projectType) errors.projectType = 'Please select a project type.';
+    if (e.preferredContact !== 'Email' && !e.phone) errors.phone = `Please add a phone number so you can be reached on ${e.preferredContact}.`;
     if (Object.keys(errors).length) return res.status(422).json({ok:false,error:'Please check the highlighted fields.',fields:errors});
 
     const existing = await listEnquiries();

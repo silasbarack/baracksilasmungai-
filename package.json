@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "NODE_ENV=development node server.js"
+    "dev": "node --env-file=.env server.js",
+    "smtp:check": "node --env-file=.env -e \"require('nodemailer').createTransport({host:process.env.SMTP_HOST,port:+process.env.SMTP_PORT,secure:String(process.env.SMTP_SECURE)==='true',auth:{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}}).verify().then(()=>console.log('SMTP OK')).catch(e=>{console.error('SMTP FAILED:',e.message);process.exit(1)})\""
   },
   "dependencies": {
     "express": "^4.21.2",

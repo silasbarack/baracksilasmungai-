@@ -5,7 +5,7 @@
     "description": "Web Developer | Custom Websites & Business Systems",
     "tagline": "Websites that turn business ideas into useful experiences.",
     "location": "Kenya",
-    "publicEmail": "",
+    "publicEmail": "silasbarack5@gmail.com",
     "phone": "",
     "whatsapp": "",
     "bookingUrl": ""
@@ -13,6 +13,19 @@
   "seo": {
     "defaultTitle": "baracksilasmungai — Web Developer & Custom Business Systems",
     "defaultDescription": "Custom websites, booking systems, dashboards, payment integrations and practical business web systems."
+  },
+  "contact": {
+    "heading": "Reach me directly",
+    "responseTime": "Replies within one business day",
+    "hours": "Monday to Saturday, 8:00am – 7:00pm EAT (UTC+3).",
+    "whatsappMessage": "Hello Barack, I would like to discuss a website project.",
+    "bookingLabel": "Choose a time that suits you",
+    "checklist": [
+      "What your business does",
+      "What the website or system must achieve",
+      "Features you already know you need",
+      "Target launch date and budget range"
+    ]
   },
   "projects": [
     {
