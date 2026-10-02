@@ -32,7 +32,17 @@ app.use((req, res, next) => {
 // The shell and its scripts carry no content hash, so they must never be cached blind:
 // a far-future max-age on index.html hides every deploy from returning visitors until it
 // expires. 'no-cache' still stores the file, it just revalidates (cheap 304s via ETag).
+// Each deploy gives the stylesheet and scripts a new URL (?v=<content hash>), so a page can never be
+// paired with a stylesheet or script cached from an earlier deploy.
+const ASSET_VERSION = crypto.createHash('sha256').update(['tech.js','app.js','styles.css'].map(f => fs.readFileSync(path.join(ROOT,'public',f))).join('')).digest('hex').slice(0,10);
+const INDEX_HTML = fs.readFileSync(path.join(ROOT,'public','index.html'),'utf8').replace(/"\/(tech\.js|app\.js|styles\.css)"/g, `"/$1?v=${ASSET_VERSION}"`);
+function sendIndex(res) {
+  res.setHeader('Cache-Control', isProduction ? 'no-cache' : 'no-store');
+  res.type('html').send(INDEX_HTML);
+}
+app.get(['/','/index.html'], (req,res) => sendIndex(res));
 app.use(express.static(path.join(ROOT, 'public'), {
+  index: false,
   etag: true,
   lastModified: true,
   maxAge: 0,
@@ -206,7 +216,10 @@ function getTransport() {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000
   });
 }
 // Render's free plan blocks outbound SMTP, so Resend's HTTPS API is preferred when configured.
@@ -270,6 +283,9 @@ async function sendNotifications(e) {
 
 app.get('/api/content', async (req,res,next) => {
   try {
+    // Scripts from before versioned URLs request this without ?client. Those browsers may hold a week-long
+    // cached copy of the old site, so ask them to drop their HTTP cache; the next load then fetches this deploy.
+    if (!req.query.client && isProduction) res.setHeader('Clear-Site-Data', '"cache"');
     const content = await getContent();
     const safe = JSON.parse(JSON.stringify(content));
     // Content saved in the database before a field existed keeps it blank; fill such gaps from content.json.
@@ -324,11 +340,13 @@ app.post('/api/enquiries', async (req,res,next) => {
     if (duplicate) return res.status(409).json({ok:false,error:'A very similar enquiry was already received recently. Your original submission is still stored.'});
 
     await insertEnquiry(e);
-    let email = { configured:false };
-    try { email = await sendNotifications(e); } catch (err) { console.error('Notification error:', err); email = { configured:true, ownerNotified:false, clientConfirmed:false }; }
-    if (!email.ownerNotified) console.warn(`Enquiry ${refOf(e)} stored but the owner was not emailed (configured: ${email.configured}).`);
-    // emailDelivered tells the visitor whether *their* confirmation email was sent.
-    res.status(201).json({ok:true,id:e.id,reference:refOf(e),emailConfigured:email.configured,emailDelivered:Boolean(email.clientConfirmed),message:`Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received and I will be in touch soon.`});
+    // Reply as soon as the enquiry is stored: email providers can be slow or blocked (Render's free
+    // plan drops SMTP, which otherwise stalls the request for minutes), so notify in the background.
+    sendNotifications(e)
+      .then(r => { if (!r.ownerNotified) console.warn(`Enquiry ${refOf(e)} stored but the owner was not emailed (configured: ${r.configured}).`); })
+      .catch(err => console.error(`Notifications for enquiry ${refOf(e)} failed:`, err));
+    // emailDelivered tells the visitor whether a confirmation email will be sent to them.
+    res.status(201).json({ok:true,id:e.id,reference:refOf(e),emailConfigured:Boolean(mailProvider()),emailDelivered:canEmailClients(),message:`Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received and I will be in touch soon.`});
   } catch (e) { next(e); }
 });
 
@@ -405,10 +423,7 @@ app.get('/sitemap.xml', async (req,res,next) => {
   } catch(e){next(e);}
 });
 
-app.get('*', (req,res) => {
-  res.setHeader('Cache-Control', isProduction ? 'no-cache' : 'no-store');
-  res.sendFile(path.join(ROOT,'public','index.html'));
-});
+app.get('*', (req,res) => sendIndex(res));
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ok:false,error:'The server could not complete that request.'});
