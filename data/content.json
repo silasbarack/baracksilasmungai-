@@ -41,7 +41,11 @@
         "REST APIs"
       ],
       "liveUrl": "https://ticketflow-frontend-w47s.onrender.com",
-      "published": true
+      "published": true,
+      "images": {
+        "desktop": "/assets/projects/ticketflow-kenya-desktop.jpg",
+        "mobile": "/assets/projects/ticketflow-kenya-mobile.jpg"
+      }
     },
     {
       "slug": "zawadimart",
@@ -67,7 +71,11 @@
         "Responsive UI"
       ],
       "liveUrl": "https://zawadimart-premium.onrender.com",
-      "published": true
+      "published": true,
+      "images": {
+        "desktop": "/assets/projects/zawadimart-desktop.jpg",
+        "mobile": "/assets/projects/zawadimart-mobile.jpg"
+      }
     }
   ],
   "services": [
