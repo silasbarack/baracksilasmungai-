@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Fixed layout viewport: phones render the desktop layout at 1280px and scale it to fit,
+     so the mobile UI is identical to desktop rather than reflowing. The max-width media
+     queries in styles.css never match at this width and are kept only so that reverting
+     this one line restores the responsive layout. Pinch-zoom is deliberately left enabled. -->
+<meta name="viewport" content="width=1280">
 <meta name="theme-color" content="#0b2540">
 <meta name="description" content="Custom websites, booking systems, dashboards, payment integrations and practical business web systems.">
 <meta property="og:type" content="website">
