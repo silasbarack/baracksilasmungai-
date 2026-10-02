@@ -383,3 +383,23 @@ footer{background:var(--navy3);color:#aebfca;padding:60px 0 25px;font-size:14px}
 .footgrid a.foot-ch{display:flex;align-items:center;gap:10px;padding:5px 0}
 .foot-ch .cmark{width:24px;height:24px;border-radius:7px;box-shadow:none}
 .foot-ch .cm-gmail{border:0}
+
+/* Page entrance: hero content settles in once the loader lifts (html.loaded is set by app.js) */
+@keyframes riseIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes floatIn{from{opacity:0;transform:translateY(30px) scale(.97)}to{opacity:1;transform:none}}
+html:not(.loaded) .hero .wrap>*>*,html:not(.loaded) .pagehero .wrap>*{opacity:0}
+.loaded .hero .eyebrow,.loaded .pagehero .eyebrow{animation:riseIn .6s ease-out both}
+.loaded .hero h1,.loaded .pagehero h1{animation:riseIn .7s .08s ease-out both}
+.loaded .hero .lead,.loaded .pagehero p{animation:riseIn .7s .18s ease-out both}
+.loaded .hero .actions{animation:riseIn .7s .28s ease-out both}
+.loaded .hero .proof{animation:riseIn .7s .38s ease-out both}
+.loaded .hero .devices{animation:floatIn .9s .2s cubic-bezier(.2,.7,.2,1) both}
+/* Scroll reveal: classes added by app.js, so content is never hidden without scripts */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.rv-item{transition-delay:var(--rv-d,0ms)}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  html:not(.loaded) .hero .wrap>*>*,html:not(.loaded) .pagehero .wrap>*{opacity:1}
+  .loaded .hero *,.loaded .pagehero *{animation:none!important}
+  .rv{opacity:1;transform:none;transition:none}
+}

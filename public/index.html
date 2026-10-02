@@ -17,9 +17,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&display=swap">
 <title>baracksilasmungai — Web Developer & Custom Business Systems</title>
 <link rel="stylesheet" href="/styles.css">
+<style>
+/* Loader styles live inline so the screen paints before anything else; it removes itself after 6s if scripts fail. */
+#loader{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:#fff;transition:opacity .5s ease,visibility .5s;animation:loaderBail .01s 6s forwards}
+#loader .ld{display:flex;flex-direction:column;align-items:center;gap:22px}
+#loader img{width:84px;height:auto;animation:ldPulse 1.6s ease-in-out infinite}
+#loader .bar{width:160px;height:3px;border-radius:3px;background:#e3e8ec;overflow:hidden}
+#loader .bar span{display:block;height:100%;width:40%;border-radius:3px;background:linear-gradient(90deg,#0f8a83,#f2a02c);animation:ldBar 1.1s ease-in-out infinite}
+.loaded #loader{opacity:0;visibility:hidden;pointer-events:none}
+@keyframes ldBar{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+@keyframes ldPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.94);opacity:.85}}
+@keyframes loaderBail{to{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){#loader img,#loader .bar span{animation:none}}
+</style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Barack Silas Mungai","jobTitle":"Web Developer","url":"/","knowsAbout":["Web development","Business websites","Booking systems","Dashboards","API integrations"]}</script>
 </head>
 <body>
+<div id="loader" role="status" aria-label="Loading"><div class="ld"><img src="/assets/logo-mark.png" alt="" width="328" height="251"><div class="bar"><span></span></div></div></div>
 <a class="skip" href="#main">Skip to content</a>
 <header><div class="wrap nav"><a class="brand" href="/" aria-label="baracksilasmungai home"><picture><source media="(max-width:360px)" srcset="/assets/logo-mark.png"><img src="/assets/logo.png" alt="baracksilasmungai — Barack Silas Mungai" width="1010" height="251"></picture></a><a class="btn sm nav-cta" href="/request-a-quote">Request a Quote</a><button id="menu" aria-label="Open navigation" aria-expanded="false">☰</button><nav id="nav"><a href="/">Home</a><a href="/about">About</a><a href="/services">Services</a><a href="/portfolio">Portfolio</a><a href="/#process">Process</a><a href="/faq">FAQ</a><a href="/contact">Contact</a><a class="btn" href="/request-a-quote">Request a Quote →</a></nav></div></header>
 <main id="main"></main>
