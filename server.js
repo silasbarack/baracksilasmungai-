@@ -29,7 +29,21 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
-app.use(express.static(path.join(ROOT, 'public'), { maxAge: isProduction ? '7d' : 0, extensions: ['html'] }));
+// The shell and its scripts carry no content hash, so they must never be cached blind:
+// a far-future max-age on index.html hides every deploy from returning visitors until it
+// expires. 'no-cache' still stores the file, it just revalidates (cheap 304s via ETag).
+app.use(express.static(path.join(ROOT, 'public'), {
+  etag: true,
+  lastModified: true,
+  maxAge: 0,
+  extensions: ['html'],
+  setHeaders(res, filePath) {
+    if (!isProduction) return res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', /\.(html|js|css)$/i.test(filePath)
+      ? 'no-cache'
+      : 'public, max-age=86400, must-revalidate');
+  }
+}));
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(ENQUIRIES_FILE)) fs.writeFileSync(ENQUIRIES_FILE, '[]\n');
@@ -331,7 +345,10 @@ app.get('/sitemap.xml', async (req,res,next) => {
   } catch(e){next(e);}
 });
 
-app.get('*', (req,res) => res.sendFile(path.join(ROOT,'public','index.html')));
+app.get('*', (req,res) => {
+  res.setHeader('Cache-Control', isProduction ? 'no-cache' : 'no-store');
+  res.sendFile(path.join(ROOT,'public','index.html'));
+});
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ok:false,error:'The server could not complete that request.'});
