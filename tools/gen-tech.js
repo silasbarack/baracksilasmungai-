@@ -39,6 +39,9 @@ const CONCEPTS = {
   'Testing': 'check', 'Accessibility': 'user', 'SEO': 'chart'
 };
 
+// Official marks for the contact channels (footer and contact page), keyed by channel kind.
+const CONTACT = { email: 'gmail', whatsapp: 'whatsapp' };
+
 const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 // WCAG relative luminance: light marks get a dark disc so the official colour stays legible
 const lum = hex => {
@@ -58,6 +61,12 @@ for (const [slug, labels] of Object.entries(BRANDS)) {
   const entry = { t: icon.title, c: '#' + icon.hex, s: rgb(icon.hex), d: lum(icon.hex) > 0.45 ? 1 : 0, p: icon.path };
   for (const label of labels) out[norm(label)] = entry;
 }
+const contact = {};
+for (const [kind, slug] of Object.entries(CONTACT)) {
+  const icon = si['si' + slug[0].toUpperCase() + slug.slice(1)];
+  if (!icon) { missing.push(slug); continue; }
+  contact[kind] = { t: icon.title, c: '#' + icon.hex, p: icon.path };
+}
 if (missing.length) { console.error('MISSING slugs: ' + missing.join(', ')); process.exit(1); }
 
 const concepts = {};
@@ -67,12 +76,12 @@ const pkgPath = require.resolve('simple-icons').replace(/[\\/]index\.js$/, '/pac
 const version = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version;
 
 const header = '/* Official brand marks from simple-icons v' + version + ' (CC0). Trademarks belong to their owners;\n'
-  + '   used here only to identify the technologies in use. Generated file - edit gen-tech.js instead.\n'
+  + '   used here only to identify the technologies and contact channels in use. Generated file - edit gen-tech.js instead.\n'
   + '   t=title c=official hex s=rgb d=needs dark disc for contrast p=path (viewBox 0 0 24 24) */\n';
 // assigned onto window, not declared with const: a top-level const is a global *lexical*
 // binding, which app.js can only see because both are classic scripts. An explicit global
 // keeps working if either file is ever bundled or loaded as a module.
-fs.writeFileSync(OUT, header + 'window.TECH=' + JSON.stringify(out) + ';\nwindow.TECH_CONCEPT=' + JSON.stringify(concepts) + ';\n');
+fs.writeFileSync(OUT, header + 'window.TECH=' + JSON.stringify(out) + ';\nwindow.TECH_CONCEPT=' + JSON.stringify(concepts) + ';\nwindow.CONTACT_MARKS=' + JSON.stringify(contact) + ';\n');
 
 const uniq = [...new Set(Object.values(out).map(x => x.t))];
 console.log('wrote public/tech.js - ' + uniq.length + ' brands, ' + Object.keys(out).length + ' labels, '
