@@ -279,6 +279,23 @@
     ],
     "availability": "Based in Kenya and available for remote website and web-application projects."
   },
-  "testimonials": [],
-  "articles": []
+  "testimonials": [
+    {
+      "published": false,
+      "name": "Example Client",
+      "role": "Owner",
+      "company": "Business name",
+      "rating": 5,
+      "quote": "TEMPLATE — not a real review. Replace every field with a real client’s own words, then set published to true. Delete this entry once you have one real review.",
+      "photo": "",
+      "projectSlug": "",
+      "date": ""
+    }
+  ],
+  "articles": [],
+  "reviewsSection": {
+    "eyebrow": "Client reviews",
+    "heading": "What clients say about working with me",
+    "intro": "Feedback from the businesses and people I have built for."
+  }
 }

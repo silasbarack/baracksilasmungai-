@@ -208,6 +208,7 @@ app.get('/api/content', async (req,res,next) => {
     const content = await getContent();
     const safe = JSON.parse(JSON.stringify(content));
     safe.articles = (safe.articles || []).filter(a => a.published);
+    safe.testimonials = (safe.testimonials || []).filter(t => t.published);
     res.json({ok:true,content:safe});
   } catch (e) { next(e); }
 });
