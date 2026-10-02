@@ -29,7 +29,20 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
-app.use(express.static(path.join(ROOT, 'public'), { maxAge: isProduction ? '7d' : 0, extensions: ['html'] }));
+// Fingerprint the stylesheet and script so browsers never mix a new page with a cached old stylesheet.
+const ASSET_VERSION = crypto.createHash('sha256').update(['app.js','styles.css'].map(f => fs.readFileSync(path.join(ROOT,'public',f))).join('')).digest('hex').slice(0,10);
+const INDEX_HTML = fs.readFileSync(path.join(ROOT,'public','index.html'),'utf8').replace(/(\/(?:styles\.css|app\.js))"/g, `$1?v=${ASSET_VERSION}"`);
+function sendIndex(res, status = 200) {
+  res.status(status).set('Cache-Control','no-cache').type('html').send(INDEX_HTML);
+}
+app.get(['/','/index.html'], (req,res) => sendIndex(res));
+app.use(express.static(path.join(ROOT, 'public'), {
+  index: false,
+  setHeaders(res, file, stat) {
+    if (/\.(css|js)$/.test(file)) res.setHeader('Cache-Control', isProduction ? 'public, max-age=31536000, immutable' : 'no-cache');
+    else res.setHeader('Cache-Control', isProduction ? 'public, max-age=604800' : 'no-cache');
+  }
+}));
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(ENQUIRIES_FILE)) fs.writeFileSync(ENQUIRIES_FILE, '[]\n');
@@ -181,6 +194,10 @@ function fingerprint(body) {
   return crypto.createHash('sha256').update([clean(body.email,200).toLowerCase(),clean(body.name,200).toLowerCase(),clean(body.description,1000).toLowerCase()].join('|')).digest('hex');
 }
 
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const EMAIL_FROM = process.env.EMAIL_FROM || process.env.SMTP_FROM || '';
+const OWNER_EMAIL = process.env.OWNER_EMAIL || '';
+
 function getTransport() {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) return null;
   return nodemailer.createTransport({
@@ -190,16 +207,63 @@ function getTransport() {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
   });
 }
+// Render's free plan blocks outbound SMTP, so Resend's HTTPS API is preferred when configured.
+function mailProvider() {
+  if (RESEND_API_KEY) return 'resend';
+  if (getTransport() && (process.env.SMTP_FROM || process.env.SMTP_USER)) return 'smtp';
+  return null;
+}
+async function sendMail({ to, subject, text, html, replyTo }) {
+  const provider = mailProvider();
+  if (provider === 'resend') {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM || 'baracksilasmungai <onboarding@resend.dev>', to: [to], subject, text, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0,300)}`);
+    return;
+  }
+  if (provider === 'smtp') {
+    await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject, text, html, replyTo });
+    return;
+  }
+  throw new Error('No email provider configured');
+}
+// Resend's shared test sender may only email the account owner, so client confirmations need a verified sender domain.
+function canEmailClients() {
+  const provider = mailProvider();
+  if (provider === 'smtp') return true;
+  return provider === 'resend' && Boolean(EMAIL_FROM) && !/resend\.dev/i.test(EMAIL_FROM);
+}
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const refOf = e => e.id.slice(0,8).toUpperCase();
+
+function ownerEmail(e) {
+  const rows = [['Reference', refOf(e)], ['Type', e.kind === 'quote' ? 'Quotation request' : 'Enquiry'], ['Name', e.name], ['Business', e.businessName], ['Email', e.email], ['Phone', e.phone], ['Preferred contact', e.preferredContact], ['Project type', e.projectType], ['Budget', e.budget], ['Timeline', e.timeline], ['Existing website', e.existingWebsite]];
+  const filled = rows.filter(([,v]) => v);
+  const text = filled.map(([k,v]) => `${k}: ${v}`).join('\n') + `\n\n${e.description}\n\nReply to this email to answer ${e.name} directly.\nManage enquiries: ${SITE_URL}/owner`;
+  const html = `<div style="font-family:Arial,sans-serif;color:#14202c;max-width:620px"><h2 style="color:#0b2540;margin:0 0 6px">New ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} from ${escHtml(e.name)}</h2><p style="color:#5f6d7a;margin:0 0 18px">Reply to this email to answer ${escHtml(e.name)} directly.</p><table style="border-collapse:collapse;width:100%">${filled.map(([k,v]) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #e3e8ec;color:#5f6d7a;width:160px">${escHtml(k)}</td><td style="padding:7px 10px;border-bottom:1px solid #e3e8ec">${escHtml(v)}</td></tr>`).join('')}</table><h3 style="color:#0b2540;margin:22px 0 8px">Project description</h3><p style="white-space:pre-wrap;background:#f5f9f9;border-radius:10px;padding:14px;margin:0">${escHtml(e.description)}</p><p style="margin-top:22px"><a href="${escHtml(SITE_URL)}/owner" style="background:#0f8a83;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open owner dashboard</a></p></div>`;
+  return { subject: `New ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} — ${e.name}${e.businessName ? ` (${e.businessName})` : ''} [${refOf(e)}]`, text, html };
+}
+function clientEmail(e, site = {}) {
+  const contact = [site.whatsapp && `WhatsApp: ${site.whatsapp}`, site.phone && `Phone: ${site.phone}`, site.publicEmail && `Email: ${site.publicEmail}`].filter(Boolean);
+  const text = `Hello ${e.name},\n\nThank you for getting in touch. Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received (reference ${refOf(e)}).\n\nWhat happens next:\n1. I review your requirements.\n2. I contact you by ${e.preferredContact || 'email'} to discuss the details.\n3. You receive a clear proposal with scope, milestones and pricing.\n\nThis confirmation is not a binding quotation; scope, pricing and timing are confirmed separately after your requirements are reviewed.\n${contact.length ? `\nYou can also reach me directly:\n${contact.join('\n')}\n` : ''}\n— Barack Silas Mungai\n${SITE_URL}`;
+  const html = `<div style="font-family:Arial,sans-serif;color:#14202c;max-width:600px"><h2 style="color:#0b2540">Thank you, ${escHtml(e.name)}.</h2><p>Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received. Your reference is <b>${refOf(e)}</b>.</p><h3 style="color:#0b2540">What happens next</h3><ol style="padding-left:18px;line-height:1.7"><li>I review your requirements.</li><li>I contact you by ${escHtml(e.preferredContact || 'email')} to discuss the details.</li><li>You receive a clear proposal with scope, milestones and pricing.</li></ol><p style="color:#5f6d7a;font-size:13px">This confirmation is not a binding quotation; scope, pricing and timing are confirmed separately after your requirements are reviewed.</p>${contact.length ? `<p>You can also reach me directly:<br>${contact.map(escHtml).join('<br>')}</p>` : ''}<p>— Barack Silas Mungai<br><a href="${escHtml(SITE_URL)}" style="color:#0f8a83">${escHtml(SITE_URL.replace(/^https?:\/\//,''))}</a></p></div>`;
+  return { subject: `We received your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} [${refOf(e)}]`, text, html };
+}
 async function sendNotifications(e) {
-  const transport = getTransport();
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  if (!transport || !from) return { configured:false };
-  const ownerEmail = process.env.OWNER_EMAIL || '';
+  if (!mailProvider()) return { configured:false, ownerNotified:false, clientConfirmed:false };
+  let site = {};
+  try { site = (await getContent()).site || {}; } catch {}
   const jobs = [];
-  if (ownerEmail) jobs.push(transport.sendMail({from,to:ownerEmail,subject:`New ${e.kind === 'quote' ? 'quotation request' : 'website enquiry'} — ${e.name}`,text:`Name: ${e.name}\nBusiness: ${e.businessName || '—'}\nEmail: ${e.email}\nPhone: ${e.phone || '—'}\nProject: ${e.projectType || '—'}\nBudget: ${e.budget || '—'}\nTimeline: ${e.timeline || '—'}\n\n${e.description}`}));
-  jobs.push(transport.sendMail({from,to:e.email,subject:'Your enquiry has been received',text:`Hello ${e.name},\n\nYour enquiry has been received and stored successfully. This confirmation does not create a binding quotation or delivery commitment. Project scope, pricing and timing are confirmed separately after requirements are reviewed.\n\n— baracksilasmungai`}));
-  const results = await Promise.allSettled(jobs);
-  return { configured:true, sent:results.filter(x=>x.status==='fulfilled').length, failed:results.filter(x=>x.status==='rejected').length };
+  if (OWNER_EMAIL) jobs.push(['owner', sendMail({ to: OWNER_EMAIL, replyTo: e.email, ...ownerEmail(e) })]);
+  if (canEmailClients()) jobs.push(['client', sendMail({ to: e.email, replyTo: OWNER_EMAIL || undefined, ...clientEmail(e, site) })]);
+  const results = await Promise.allSettled(jobs.map(j => j[1]));
+  const ok = kind => jobs.some((j,i) => j[0] === kind && results[i].status === 'fulfilled');
+  results.forEach((r,i) => { if (r.status === 'rejected') console.error(`Email to ${jobs[i][0]} failed:`, r.reason?.message || r.reason); });
+  return { configured:true, ownerNotified:ok('owner'), clientConfirmed:ok('client') };
 }
 
 app.get('/api/content', async (req,res,next) => {
@@ -242,6 +306,8 @@ app.post('/api/enquiries', async (req,res,next) => {
     if (!validEmail(e.email)) errors.email = 'Please enter a valid email address.';
     if (e.description.length < 12) errors.description = 'Please describe the project or enquiry in a little more detail.';
     if (e.kind === 'quote' && !e.projectType) errors.projectType = 'Please select a project type.';
+    if (['Phone','WhatsApp'].includes(e.preferredContact) && e.phone.replace(/\D/g,'').length < 9) errors.phone = `Please add a phone number so I can reach you by ${e.preferredContact}.`;
+    if (e.phone && !/^[+\d][\d\s()-]{7,}$/.test(e.phone)) errors.phone = 'Please enter a valid phone number, e.g. +254 712 345 678.';
     if (Object.keys(errors).length) return res.status(422).json({ok:false,error:'Please check the highlighted fields.',fields:errors});
 
     const existing = await listEnquiries();
@@ -250,8 +316,9 @@ app.post('/api/enquiries', async (req,res,next) => {
 
     await insertEnquiry(e);
     let email = { configured:false };
-    try { email = await sendNotifications(e); } catch { email = { configured:true, sent:0, failed:1 }; }
-    res.status(201).json({ok:true,id:e.id,emailConfigured:email.configured,emailDelivered:email.configured ? email.failed === 0 : false,message: email.configured ? 'Your enquiry was stored successfully. Email delivery was attempted using the configured mail service.' : 'Your enquiry was stored successfully. Email notifications are not configured yet.'});
+    try { email = await sendNotifications(e); } catch (err) { console.error('Notification error:', err); email = { configured:true, ownerNotified:false, clientConfirmed:false }; }
+    if (!email.ownerNotified) console.warn(`Enquiry ${refOf(e)} stored but the owner was not emailed (configured: ${email.configured}).`);
+    res.status(201).json({ok:true,id:e.id,reference:refOf(e),confirmationEmailed:Boolean(email.clientConfirmed),message:`Thank you, ${e.name.split(' ')[0]}. Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received.`});
   } catch (e) { next(e); }
 });
 
@@ -328,7 +395,7 @@ app.get('/sitemap.xml', async (req,res,next) => {
   } catch(e){next(e);}
 });
 
-app.get('*', (req,res) => res.sendFile(path.join(ROOT,'public','index.html')));
+app.get('*', (req,res) => sendIndex(res));
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ok:false,error:'The server could not complete that request.'});
