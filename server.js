@@ -255,18 +255,31 @@ function canEmailClients() {
 const escHtml = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const refOf = e => e.id.slice(0,8).toUpperCase();
 
+// Branded email layout: logo header, white card, footer. Table-based with inline styles, which is what
+// email clients render reliably. The logo is the site's own hosted file, so it always matches the website.
+function brandEmail(inner) {
+  const site = escHtml(SITE_URL);
+  return `<!doctype html><html><body style="margin:0;padding:0;background:#f2f5f7">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f5f7;padding:24px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e3e8ec;border-radius:14px;overflow:hidden">
+<tr><td style="padding:22px 28px;border-bottom:3px solid #0f8a83"><a href="${site}" style="text-decoration:none"><img src="${site}/assets/logo.png" width="220" height="55" alt="baracksilasmungai — Barack Silas Mungai" style="display:block;border:0;width:220px;height:auto;max-width:100%;color:#0b2540;font:bold 20px Arial,sans-serif"></a></td></tr>
+<tr><td style="padding:26px 28px 30px">${inner}</td></tr>
+<tr><td style="padding:16px 28px;background:#0b2540;color:#aebfca;font:12px/1.6 Arial,sans-serif">Barack Silas Mungai · Web Developer · Kenya<br><a href="${site}" style="color:#35c4bb;text-decoration:none">${escHtml(SITE_URL.replace(/^https?:\/\//,''))}</a></td></tr>
+</table></td></tr></table></body></html>`;
+}
+
 function ownerEmail(e) {
   const rows = [['Reference', refOf(e)], ['Type', e.kind === 'quote' ? 'Quotation request' : 'Enquiry'], ['Name', e.name], ['Business', e.businessName], ['Email', e.email], ['Phone', e.phone], ['Preferred contact', e.preferredContact], ['Project type', e.projectType], ['Budget', e.budget], ['Timeline', e.timeline], ['Existing website', e.existingWebsite]];
   const filled = rows.filter(([,v]) => v);
   const text = filled.map(([k,v]) => `${k}: ${v}`).join('\n') + `\n\n${e.description}\n\nReply to this email to answer ${e.name} directly.\nManage enquiries: ${SITE_URL}/owner`;
   const html = `<div style="font-family:Arial,sans-serif;color:#14202c;max-width:620px"><h2 style="color:#0b2540;margin:0 0 6px">New ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} from ${escHtml(e.name)}</h2><p style="color:#5f6d7a;margin:0 0 18px">Reply to this email to answer ${escHtml(e.name)} directly.</p><table style="border-collapse:collapse;width:100%">${filled.map(([k,v]) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #e3e8ec;color:#5f6d7a;width:160px">${escHtml(k)}</td><td style="padding:7px 10px;border-bottom:1px solid #e3e8ec">${escHtml(v)}</td></tr>`).join('')}</table><h3 style="color:#0b2540;margin:22px 0 8px">Project description</h3><p style="white-space:pre-wrap;background:#f5f9f9;border-radius:10px;padding:14px;margin:0">${escHtml(e.description)}</p><p style="margin-top:22px"><a href="${escHtml(SITE_URL)}/owner" style="background:#0f8a83;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open owner dashboard</a></p></div>`;
-  return { subject: `New ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} — ${e.name}${e.businessName ? ` (${e.businessName})` : ''} [${refOf(e)}]`, text, html };
+  return { subject: `New ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} — ${e.name}${e.businessName ? ` (${e.businessName})` : ''} [${refOf(e)}]`, text, html: brandEmail(html) };
 }
 function clientEmail(e, site = {}) {
   const contact = [site.whatsapp && `WhatsApp: ${site.whatsapp}`, site.phone && `Phone: ${site.phone}`, site.publicEmail && `Email: ${site.publicEmail}`].filter(Boolean);
   const text = `Hello ${e.name},\n\nThank you for getting in touch. Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received (reference ${refOf(e)}).\n\nWhat happens next:\n1. I review your requirements.\n2. I contact you by ${e.preferredContact || 'email'} to discuss the details.\n3. You receive a clear proposal with scope, milestones and pricing.\n\nThis confirmation is not a binding quotation; scope, pricing and timing are confirmed separately after your requirements are reviewed.\n${contact.length ? `\nYou can also reach me directly:\n${contact.join('\n')}\n` : ''}\n— Barack Silas Mungai\n${SITE_URL}`;
   const html = `<div style="font-family:Arial,sans-serif;color:#14202c;max-width:600px"><h2 style="color:#0b2540">Thank you, ${escHtml(e.name)}.</h2><p>Your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} has been received. Your reference is <b>${refOf(e)}</b>.</p><h3 style="color:#0b2540">What happens next</h3><ol style="padding-left:18px;line-height:1.7"><li>I review your requirements.</li><li>I contact you by ${escHtml(e.preferredContact || 'email')} to discuss the details.</li><li>You receive a clear proposal with scope, milestones and pricing.</li></ol><p style="color:#5f6d7a;font-size:13px">This confirmation is not a binding quotation; scope, pricing and timing are confirmed separately after your requirements are reviewed.</p>${contact.length ? `<p>You can also reach me directly:<br>${contact.map(escHtml).join('<br>')}</p>` : ''}<p>— Barack Silas Mungai<br><a href="${escHtml(SITE_URL)}" style="color:#0f8a83">${escHtml(SITE_URL.replace(/^https?:\/\//,''))}</a></p></div>`;
-  return { subject: `We received your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} [${refOf(e)}]`, text, html };
+  return { subject: `We received your ${e.kind === 'quote' ? 'quotation request' : 'enquiry'} [${refOf(e)}]`, text, html: brandEmail(html) };
 }
 async function sendNotifications(e) {
   if (!mailProvider()) return { configured:false, ownerNotified:false, clientConfirmed:false };
