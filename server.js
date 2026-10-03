@@ -442,7 +442,23 @@ app.use((err, req, res, next) => {
   res.status(500).json({ok:false,error:'The server could not complete that request.'});
 });
 
-initDb().then(() => app.listen(PORT, () => console.log(`baracksilasmungai running on ${SITE_URL}`))).catch(err => {
+// Report the mail setup at startup so the logs show at once whether enquiry emails can be sent.
+async function checkMail() {
+  const provider = mailProvider();
+  if (!provider) return console.warn('Email: not configured (set RESEND_API_KEY, or SMTP_HOST/SMTP_USER/SMTP_PASS). Enquiries are stored but no emails are sent.');
+  if (!OWNER_EMAIL) console.warn('Email: OWNER_EMAIL is not set, so you will not be notified of new enquiries.');
+  if (provider === 'resend') return console.log(`Email: using Resend; notifications go to ${OWNER_EMAIL || '(nobody)'}.`);
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  if (!process.env.SMTP_FROM) console.warn(`Email: SMTP_FROM is not set, so mail is sent from the SMTP login (${from}); most providers reject that unless it is a verified sender.`);
+  try {
+    await getTransport().verify();
+    console.log(`Email: SMTP ready (${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}, from ${from}); notifications go to ${OWNER_EMAIL || '(nobody)'}.`);
+  } catch (err) {
+    console.error(`Email: SMTP check FAILED (${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}): ${err.message}`);
+  }
+}
+
+initDb().then(() => app.listen(PORT, () => { console.log(`baracksilasmungai running on ${SITE_URL}`); checkMail(); })).catch(err => {
   console.error('Database initialisation failed:', err);
   process.exit(1);
 });
