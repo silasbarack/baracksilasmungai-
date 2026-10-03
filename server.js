@@ -295,6 +295,30 @@ async function sendNotifications(e) {
   return { configured:true, ownerNotified:ok('owner'), clientConfirmed:ok('client') };
 }
 
+
+// Optional live email smoke test. Disabled unless EMAIL_TEST_TOKEN is set in the server environment.
+// It sends only to OWNER_EMAIL and is useful for verifying the same provider used by enquiry notifications.
+app.get('/api/_email-test', async (req,res) => {
+  const expected = process.env.EMAIL_TEST_TOKEN || '';
+  const supplied = String(req.query.token || '');
+  const a = Buffer.from(supplied), b = Buffer.from(expected);
+  if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(404).json({ok:false});
+  if (!OWNER_EMAIL) return res.status(503).json({ok:false,error:'OWNER_EMAIL is not configured.'});
+  try {
+    await sendMail({
+      to: OWNER_EMAIL,
+      subject: 'baracksilasmungai enquiry email test',
+      text: `This is a live delivery test from ${SITE_URL}. If you received it, the email provider used for enquiry notifications is working.`,
+      html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This message was sent by <b>${escHtml(SITE_URL)}</b> using the same email provider as new-enquiry notifications.</p></div>`)
+    });
+    console.log(`Email smoke test: sent successfully to ${OWNER_EMAIL}.`);
+    res.json({ok:true,provider:mailProvider(),to:OWNER_EMAIL});
+  } catch (err) {
+    console.error(`Email smoke test FAILED: ${err.message}`);
+    res.status(500).json({ok:false,error:'Email delivery test failed.'});
+  }
+});
+
 app.get('/api/content', async (req,res,next) => {
   try {
     // Scripts from before versioned URLs request this without ?client. Those browsers may hold a week-long
