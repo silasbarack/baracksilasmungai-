@@ -207,7 +207,8 @@ function fingerprint(body) {
 }
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const EMAIL_FROM = process.env.EMAIL_FROM || process.env.SMTP_FROM || '';
+// Resend's sender must be on a domain verified in Resend, so it never borrows SMTP_FROM (often a Gmail address).
+const EMAIL_FROM = process.env.EMAIL_FROM || '';
 const OWNER_EMAIL = process.env.OWNER_EMAIL || '';
 
 function getTransport() {
