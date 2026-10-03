@@ -447,7 +447,22 @@ async function checkMail() {
   const provider = mailProvider();
   if (!provider) return console.warn('Email: not configured (set RESEND_API_KEY, or SMTP_HOST/SMTP_USER/SMTP_PASS). Enquiries are stored but no emails are sent.');
   if (!OWNER_EMAIL) console.warn('Email: OWNER_EMAIL is not set, so you will not be notified of new enquiries.');
-  if (provider === 'resend') return console.log(`Email: using Resend; notifications go to ${OWNER_EMAIL || '(nobody)'}.`);
+  if (provider === 'resend') {
+    // A sending-only key cannot list domains and answers 401 restricted_api_key, which still proves it is valid.
+    try {
+      const r = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${RESEND_API_KEY}` }, signal: AbortSignal.timeout(10000) });
+      const body = await r.json().catch(() => ({}));
+      const restricted = r.status === 401 && /restricted/i.test(body.name || body.message || '');
+      if (!r.ok && !restricted) return console.error(`Email: Resend key REJECTED (${r.status}: ${body.message || body.name || 'unknown error'}). No emails will be sent.`);
+      const domains = Array.isArray(body.data) ? body.data.map(d => `${d.name} (${d.status})`).join(', ') : '';
+      console.log(`Email: Resend key valid${restricted ? ' (sending-only)' : ''}; notifications go to ${OWNER_EMAIL || '(nobody)'}; ` +
+        (canEmailClients() ? `clients get confirmations from ${EMAIL_FROM}.` : 'clients get no confirmation email until EMAIL_FROM is set to an address on a verified domain.') +
+        (domains ? ` Domains: ${domains}.` : ''));
+    } catch (err) {
+      console.error(`Email: could not reach Resend to check the key: ${err.message}`);
+    }
+    return;
+  }
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   if (!process.env.SMTP_FROM) console.warn(`Email: SMTP_FROM is not set, so mail is sent from the SMTP login (${from}); most providers reject that unless it is a verified sender.`);
   try {
