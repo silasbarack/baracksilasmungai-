@@ -153,6 +153,7 @@ async function updateEnquiry(id, patch) {
     await pool.query(`UPDATE enquiries SET status=COALESCE($2,status), private_note=COALESCE($3,private_note), updated_at=NOW() WHERE id=$1`, [id, patch.status || null, typeof patch.privateNote === 'string' ? patch.privateNote.slice(0,5000) : null]);
     return;
   }
+  if (patch.status && !['New','Contacted','Quoted','Won','Closed'].includes(patch.status)) throw new Error('Invalid status');
   const rows = readLocalJson(ENQUIRIES_FILE, []);
   const index = rows.findIndex(x => x.id === id);
   if (index < 0) throw new Error('Not found');
@@ -435,7 +436,7 @@ app.post('/api/owner/login', (req,res) => {
   if (!rateLimit(`login:${ip}`, 8, 15 * 60 * 1000)) return res.status(429).json({ok:false,error:'Too many login attempts. Please try again later.'});
   const supplied = clean(req.body.password,300);
   const a = Buffer.from(supplied), b = Buffer.from(OWNER_PASSWORD);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(401).json({ok:false,error:'Incorrect owner password.'});
+  if (a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(401).json({ok:false,error:'Incorrect Password.'});
   const token = signToken({owner:true,exp:Date.now()+12*60*60*1000});
   res.setHeader('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${isProduction ? '; Secure' : ''}`);
   res.json({ok:true});
@@ -445,7 +446,7 @@ app.post('/api/owner/logout', (req,res) => {
   res.json({ok:true});
 });
 app.get('/api/owner/session', (req,res) => res.json({ok:true,authenticated:Boolean(verifyToken(parseCookies(req)[COOKIE_NAME])?.owner)}));
-app.get('/api/owner/enquiries', ownerOnly, async (req,res,next) => { try { res.json({ok:true,enquiries:await listEnquiries()}); } catch(e){next(e);} });
+app.get('/api/owner/enquiries', ownerOnly, async (req,res,next) => { try { res.json({ok:true,storage:pool?'database':'file',enquiries:(await listEnquiries()).map(({fingerprint,...q}) => q)}); } catch(e){next(e);} });
 app.patch('/api/owner/enquiries/:id', ownerOnly, async (req,res,next) => { try { await updateEnquiry(req.params.id, {status:req.body.status,privateNote:req.body.privateNote}); res.json({ok:true}); } catch(e){next(e);} });
 app.get('/api/owner/content', ownerOnly, async (req,res,next) => { try { res.json({ok:true,content:await getContent()}); } catch(e){next(e);} });
 app.put('/api/owner/content', ownerOnly, async (req,res,next) => {
@@ -516,7 +517,7 @@ async function checkMail() {
   }
 }
 
-initDb().then(() => app.listen(PORT, async () => { console.log(`baracksilasmungai running on ${SITE_URL}`); await checkMail(); if (String(process.env.EMAIL_SMOKE_ON_START).toLowerCase() === 'true' && OWNER_EMAIL) { try { await sendMail({ to: OWNER_EMAIL, subject: 'baracksilasmungai enquiry email test', text: `Live startup smoke test from ${SITE_URL}.`, html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This live startup test used the same email provider as enquiry notifications.</p></div>`) }); console.log(`Email startup smoke test: sent successfully to ${OWNER_EMAIL}.`); } catch (err) { console.error(`Email startup smoke test FAILED: ${err.message}`); } } })).catch(err => {
+initDb().then(() => app.listen(PORT, async () => { console.log(`baracksilasmungai running on ${SITE_URL}`); console.log(pool ? 'Storage: PostgreSQL (DATABASE_URL is set).' : 'Storage: local file - enquiries are LOST on every deploy or restart. Set DATABASE_URL.'); await checkMail(); if (String(process.env.EMAIL_SMOKE_ON_START).toLowerCase() === 'true' && OWNER_EMAIL) { try { await sendMail({ to: OWNER_EMAIL, subject: 'baracksilasmungai enquiry email test', text: `Live startup smoke test from ${SITE_URL}.`, html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This live startup test used the same email provider as enquiry notifications.</p></div>`) }); console.log(`Email startup smoke test: sent successfully to ${OWNER_EMAIL}.`); } catch (err) { console.error(`Email startup smoke test FAILED: ${err.message}`); } } })).catch(err => {
   console.error('Database initialisation failed:', err);
   process.exit(1);
 });
