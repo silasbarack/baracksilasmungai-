@@ -238,8 +238,10 @@ async function sendMail({ to, subject, text, html, replyTo }) {
       body: JSON.stringify({ from: EMAIL_FROM || 'baracksilasmungai <onboarding@resend.dev>', to: [to], subject, text, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
       signal: AbortSignal.timeout(15000)
     });
-    if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0,300)}`);
-    return;
+    const resendBody = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`Resend ${r.status}: ${resendBody.message || resendBody.name || 'unknown error'}`);
+    if (resendBody.id) console.log(`Resend accepted email id=${resendBody.id} to=${to}`);
+    return resendBody;
   }
   if (provider === 'smtp') {
     await getTransport().sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject, text, html, replyTo });
