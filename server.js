@@ -498,7 +498,7 @@ async function checkMail() {
   }
 }
 
-initDb().then(() => app.listen(PORT, () => { console.log(`baracksilasmungai running on ${SITE_URL}`); checkMail(); })).catch(err => {
+initDb().then(() => app.listen(PORT, async () => { console.log(`baracksilasmungai running on ${SITE_URL}`); await checkMail(); if (String(process.env.EMAIL_SMOKE_ON_START).toLowerCase() === 'true' && OWNER_EMAIL) { try { await sendMail({ to: OWNER_EMAIL, subject: 'baracksilasmungai enquiry email test', text: `Live startup smoke test from ${SITE_URL}.`, html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This live startup test used the same email provider as enquiry notifications.</p></div>`) }); console.log(`Email startup smoke test: sent successfully to ${OWNER_EMAIL}.`); } catch (err) { console.error(`Email startup smoke test FAILED: ${err.message}`); } } })).catch(err => {
   console.error('Database initialisation failed:', err);
   process.exit(1);
 });
