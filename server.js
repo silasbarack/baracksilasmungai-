@@ -240,7 +240,23 @@ async function sendMail({ to, subject, text, html, replyTo }) {
     });
     const resendBody = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(`Resend ${r.status}: ${resendBody.message || resendBody.name || 'unknown error'}`);
-    if (resendBody.id) console.log(`Resend accepted email id=${resendBody.id} to=${to}`);
+    if (resendBody.id) {
+      console.log(`Resend accepted email id=${resendBody.id} to=${to}`);
+      if (String(process.env.RESEND_CHECK_STATUS).toLowerCase() === 'true') {
+        setTimeout(async () => {
+          try {
+            const sr = await fetch(`https://api.resend.com/emails/${resendBody.id}`, {
+              headers: { Authorization: `Bearer ${RESEND_API_KEY}` },
+              signal: AbortSignal.timeout(10000)
+            });
+            const sb = await sr.json().catch(() => ({}));
+            console.log(`Resend status id=${resendBody.id} http=${sr.status} event=${sb.last_event || sb.status || sb.message || 'unknown'}`);
+          } catch (err) {
+            console.error(`Resend status check failed id=${resendBody.id}: ${err.message}`);
+          }
+        }, 6000);
+      }
+    }
     return resendBody;
   }
   if (provider === 'smtp') {
