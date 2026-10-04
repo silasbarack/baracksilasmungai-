@@ -112,13 +112,33 @@ clearErrors(f);
 const local={};
 if(o.preferredContact&&o.preferredContact!=='Email'&&!String(o.phone||'').trim())local.phone='Add a phone number so I can reach you on '+o.preferredContact+', or choose Email instead.';
 if(Object.keys(local).length){showErrors(f,local);setStatus(s,'err','Please check the highlighted fields.');return}
-const label=b.textContent;b.disabled=true;b.textContent='Sending…';
-try{const r=await fetch('/api/enquiries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}),d=await r.json().catch(()=>({}));
-if(r.ok){track('enquiry_success',{kind:o.kind});return sent(f,o,d)}
-if(d.fields)showErrors(f,d.fields);
+const label=b.textContent;b.disabled=true;b.textContent='Sending…';s.hidden=true;
+if(navigator.onLine===false){setStatus(s,'err','You appear to be offline. Reconnect and press Submit again — your details are still here.');b.disabled=false;b.textContent=label;return}
+const pr=sendProgress(f);let res;
+try{res=await postWithProgress('/api/enquiries',o,pr)}catch(err){res={error:err}}
+if(res.status>=200&&res.status<300){pr.finish();await wait(450);pr.remove();track('enquiry_success',{kind:o.kind});return sent(f,o,res.data||{})}
+pr.remove();b.disabled=false;b.textContent=label;
+if(res.error){setStatus(s,'err',res.error.timeout?'Sending took too long — your connection may be slow. Your details are still here; please press Submit again.':'Could not reach the server. Check your connection and try again, or use the direct contact details on this page.');return}
+const d=res.data||{};if(d.fields)showErrors(f,d.fields);
 setStatus(s,'err',d.error||'Could not submit the enquiry. Please try again.')}
-catch{setStatus(s,'err','Could not reach the server. Check your connection and try again, or use the direct contact details on this page.')}
-b.disabled=false;b.textContent=label}
+// Real network progress: the bar tracks bytes uploaded, then creeps while the server saves, so a slow connection
+// visibly takes longer. A short floor keeps very fast sends from flashing past.
+function sendProgress(f){const el=document.createElement('div');el.className='send-progress';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+el.innerHTML='<div class="sp-row"><span class="spinner"></span><span class="sp-text">Connecting…</span><span class="sp-pct">0%</span></div><div class="sp-bar"><span></span></div>';
+$('.form-foot,.actions',f)?$('.form-foot,.actions',f).after(el):f.appendChild(el);
+const bar=$('.sp-bar span',el),txt=$('.sp-text',el),pct=$('.sp-pct',el);let shown=0,target=4,phase='connect',creep;
+const paint=()=>{shown+=(target-shown)*.18;if(Math.abs(target-shown)<.3)shown=target;bar.style.width=shown+'%';pct.textContent=Math.round(shown)+'%'};
+const tick=setInterval(paint,40),slow=setTimeout(()=>{if(phase!=='done')txt.textContent=phase==='upload'?'Still uploading — your connection seems slow…':'Still sending — your connection seems slow…'},8000);
+return{t0:performance.now(),
+upload(frac){phase='upload';txt.textContent='Sending your enquiry…';target=Math.max(target,8+frac*52)},
+waiting(){phase='wait';txt.textContent='Saving your enquiry…';target=Math.max(target,62);clearInterval(creep);creep=setInterval(()=>{target+=(92-target)*.06},120)},
+finish(){phase='done';clearInterval(creep);clearTimeout(slow);target=100;txt.textContent='Sent';el.classList.add('done')},
+remove(){clearInterval(tick);clearInterval(creep);clearTimeout(slow);el.remove()}}}
+function postWithProgress(url,body,pr){return new Promise((resolve,reject)=>{const x=new XMLHttpRequest();x.open('POST',url);x.setRequestHeader('Content-Type','application/json');x.timeout=45000;
+x.upload.onloadstart=()=>pr.upload(0);x.upload.onprogress=ev=>{if(ev.lengthComputable)pr.upload(ev.loaded/ev.total)};x.upload.onload=()=>{pr.upload(1);pr.waiting()};
+x.onload=async()=>{let data={};try{data=JSON.parse(x.responseText)}catch{}
+const min=reduceMotion?0:1100,left=min-(performance.now()-pr.t0);if(left>0){pr.waiting();await wait(left)}resolve({status:x.status,data})};
+x.onerror=()=>reject(new Error('network'));x.ontimeout=()=>{const err=new Error('timeout');err.timeout=true;reject(err)};x.send(JSON.stringify(body))})}
 function sent(f,o,d){const first=e(String(o.name||'').trim().split(/\s+/)[0]||'there'),ch=channels();
 f.outerHTML='<div class="form success" id="sent"><span class="badge">Enquiry received</span><h2>Thank you, '+first+'.</h2><p>'+e(d.message||'Your enquiry was stored successfully.')+'</p><p class="muted">'+
 (d.reference||d.id?'Reference <b>'+e(d.reference||String(d.id).slice(0,8).toUpperCase())+'</b>. ':'')+
