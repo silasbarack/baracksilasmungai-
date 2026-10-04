@@ -4,7 +4,7 @@
   --amber:#f2a02c;--ink:#14202c;--muted:#5f6d7a;--line:#e3e8ec;
   --bg:#ffffff;--soft:#f5f9f9;--paper:#ffffff;
   --r:16px;--shadow:0 18px 50px rgba(11,37,64,.12);--shadow-sm:0 6px 20px rgba(11,37,64,.06);
-  --serif:"Times New Roman",Times,"Liberation Serif",serif;--sans:"Noto Sans",Arial,sans-serif;
+  --serif:"Times New Roman",Tinos,"Liberation Serif",Times,serif;--sans:"Noto Sans",Arial,sans-serif;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
