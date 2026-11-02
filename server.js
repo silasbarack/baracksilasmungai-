@@ -59,7 +59,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(ENQUIRIES_FILE)) fs.writeFileSync(ENQUIRIES_FILE, '[]\n');
 if (!fs.existsSync(ANALYTICS_FILE)) fs.writeFileSync(ANALYTICS_FILE, '[]\n');
 
-const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false } }) : null;
+let pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSLMODE === 'disable' ? false : { rejectUnauthorized: false } }) : null;
 
 async function initDb() {
   if (!pool) {
@@ -522,7 +522,13 @@ async function checkMail() {
   }
 }
 
-initDb().then(() => app.listen(PORT, async () => { console.log(`baracksilasmungai running on ${SITE_URL}`); console.log(pool ? 'Storage: PostgreSQL (DATABASE_URL is set).' : 'Storage: local file - enquiries are LOST on every deploy or restart. Set DATABASE_URL.'); await checkMail(); if (String(process.env.EMAIL_SMOKE_ON_START).toLowerCase() === 'true' && OWNER_EMAIL) { try { await sendMail({ to: OWNER_EMAIL, subject: 'baracksilasmungai enquiry email test', text: `Live startup smoke test from ${SITE_URL}.`, html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This live startup test used the same email provider as enquiry notifications.</p></div>`) }); console.log(`Email startup smoke test: sent successfully to ${OWNER_EMAIL}.`); } catch (err) { console.error(`Email startup smoke test FAILED: ${err.message}`); } } })).catch(err => {
-  console.error('Database initialisation failed:', err);
+// If the database is unreachable (e.g. an expired free Render Postgres), keep the site up on local
+// file storage instead of crash-looping and taking the whole frontend down with it.
+initDb().catch(err => {
+  console.error('Database initialisation failed - falling back to local file storage so the site stays online. Enquiries saved now are LOST on restart. Fix DATABASE_URL.', err);
+  if (pool) pool.end().catch(() => {});
+  pool = null;
+}).then(() => app.listen(PORT, async () => { console.log(`baracksilasmungai running on ${SITE_URL}`); console.log(pool ? 'Storage: PostgreSQL (DATABASE_URL is set).' : 'Storage: local file - enquiries are LOST on every deploy or restart. Set DATABASE_URL.'); await checkMail(); if (String(process.env.EMAIL_SMOKE_ON_START).toLowerCase() === 'true' && OWNER_EMAIL) { try { await sendMail({ to: OWNER_EMAIL, subject: 'baracksilasmungai enquiry email test', text: `Live startup smoke test from ${SITE_URL}.`, html: brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540">Enquiry email test successful</h2><p>This live startup test used the same email provider as enquiry notifications.</p></div>`) }); console.log(`Email startup smoke test: sent successfully to ${OWNER_EMAIL}.`); } catch (err) { console.error(`Email startup smoke test FAILED: ${err.message}`); } } })).catch(err => {
+  console.error('Server failed to start:', err);
   process.exit(1);
 });
