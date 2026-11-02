@@ -138,7 +138,6 @@ async function listEnquiries() {
     const r = await pool.query(`SELECT * FROM enquiries ORDER BY created_at DESC`);
     return r.rows.map(row => ({ ...row, createdAt: row.created_at, updatedAt: row.updated_at, businessName: row.business_name, preferredContact: row.preferred_contact, projectType: row.project_type, existingWebsite: row.existing_website, privateNote: row.private_note }));
   }
-  if (isProduction) throw new Error('Database unavailable in production.');
   return readLocalJson(ENQUIRIES_FILE, []);
 }
 async function insertEnquiry(e) {
@@ -146,7 +145,6 @@ async function insertEnquiry(e) {
     await pool.query(`INSERT INTO enquiries(id,kind,name,business_name,email,phone,preferred_contact,project_type,features,budget,timeline,existing_website,description,status,private_note,fingerprint) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,'New','',$14)`, [e.id,e.kind,e.name,e.businessName,e.email,e.phone,e.preferredContact,e.projectType,JSON.stringify(e.features||[]),e.budget,e.timeline,e.existingWebsite,e.description,e.fingerprint]);
     return;
   }
-  if (isProduction) throw new Error('Database unavailable in production; enquiry was not accepted.');
   const rows = readLocalJson(ENQUIRIES_FILE, []);
   rows.unshift(e);
   writeLocalJson(ENQUIRIES_FILE, rows.slice(0, 2000));
