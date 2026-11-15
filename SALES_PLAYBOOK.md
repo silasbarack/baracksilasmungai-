@@ -83,11 +83,8 @@ Every Monday to Saturday at about 06:47 EAT, the digest emails `OWNER_EMAIL` wit
 
 A GitHub Actions workflow (`.github/workflows/daily-digest.yml`) sends it. It calls `POST /api/digest`, which also wakes the sleeping free Render instance. The server sends at most one digest per day, even if the job retries.
 
-**One-time setup**
+**Setup:** none. The workflow proves who it is with GitHub's signed OIDC identity token, so there is no shared secret to create or copy. The server accepts only a token GitHub issued to `daily-digest.yml` on `main` of this repository. A fork, another branch, another workflow or a pull request run is refused. Emails go to `OWNER_EMAIL` through the email provider the site already uses for enquiry notifications.
 
-1. Create a long random token, for example with `openssl rand -hex 32`.
-2. In Render, open the service, go to **Environment**, and add `DIGEST_TOKEN` with that value. Email must already be working, which needs `OWNER_EMAIL` plus `RESEND_API_KEY` or SMTP.
-3. In GitHub, go to the repository's **Settings → Secrets and variables → Actions → New repository secret** and add `DIGEST_TOKEN` with the same value.
-4. Test it: in GitHub, open **Actions → Daily sales digest → Run workflow**, tick *force*, and run it. The email should arrive within a few minutes.
+**Run it now:** in GitHub, open **Actions → Daily sales digest → Run workflow**, tick *force*, and run it. If a run fails with "refused", look for `Sales digest call refused:` in the Render logs, which names the reason.
 
-Optional: change the time by editing the `cron` line in the workflow. It is in UTC, so 03:47 UTC is 06:47 EAT. Add `quiet=1` to the URL to skip the email on days with nothing to act on.
+**Optional:** change the time by editing the `cron` line in the workflow. It is in UTC, so 03:47 UTC is 06:47 EAT. Add `quiet=1` to the URL in the workflow to skip the email on days with nothing to act on. For calls from outside GitHub, you can also set a `DIGEST_TOKEN` environment variable in Render and send it as `Authorization: Bearer <token>`.

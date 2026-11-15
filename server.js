@@ -403,9 +403,57 @@ async function sendNotifications(e) {
 }
 
 
-// Daily sales digest: a morning email listing the leads that need action. An outside scheduler (the GitHub
-// Actions workflow in .github/workflows/daily-digest.yml) calls POST /api/digest with DIGEST_TOKEN; Render's
-// free plan sleeps, so an in-process timer would not fire reliably. Without DIGEST_TOKEN the endpoint is hidden.
+// Daily sales digest: a morning email listing the leads that need action. The GitHub Actions workflow in
+// .github/workflows/daily-digest.yml calls POST /api/digest (Render's free plan sleeps, so an in-process timer
+// would not fire reliably). The caller proves itself with GitHub's signed OIDC token for that workflow on main,
+// so no shared secret has to be set anywhere. An optional DIGEST_TOKEN bearer token also works for manual calls.
+const GH_OIDC_ISSUER = 'https://token.actions.githubusercontent.com';
+const DIGEST_REPO = process.env.DIGEST_GITHUB_REPO || 'silasbarack/baracksilasmungai-';
+const DIGEST_AUDIENCE = 'baracksilasmungai-digest';
+let ghJwks = { at: 0, keys: [] };
+async function githubKey(kid) {
+  const stale = Date.now() - ghJwks.at > 3600000;
+  const missing = !ghJwks.keys.some(k => k.kid === kid) && Date.now() - ghJwks.at > 60000;
+  if (stale || missing) {
+    const r = await fetch(`${GH_OIDC_ISSUER}/.well-known/jwks`, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error(`GitHub JWKS ${r.status}`);
+    ghJwks = { at: Date.now(), keys: (await r.json()).keys || [] };
+  }
+  const jwk = ghJwks.keys.find(k => k.kid === kid);
+  return jwk ? crypto.createPublicKey({ key: jwk, format: 'jwk' }) : null;
+}
+// Returns the token's claims when it is a valid GitHub OIDC token from this repository's digest workflow on main.
+async function verifyDigestOidc(token) {
+  const parts = String(token).split('.');
+  if (parts.length !== 3) return { error: 'not a JWT' };
+  let header, claims;
+  try { header = JSON.parse(Buffer.from(parts[0], 'base64url')); claims = JSON.parse(Buffer.from(parts[1], 'base64url')); } catch { return { error: 'malformed JWT' }; }
+  if (header.alg !== 'RS256') return { error: 'unexpected algorithm' };
+  const key = await githubKey(header.kid);
+  if (!key) return { error: 'unknown signing key' };
+  if (!crypto.verify('RSA-SHA256', Buffer.from(`${parts[0]}.${parts[1]}`), key, Buffer.from(parts[2], 'base64url'))) return { error: 'bad signature' };
+  const now = Date.now() / 1000, aud = [].concat(claims.aud);
+  if (claims.iss !== GH_OIDC_ISSUER) return { error: 'wrong issuer' };
+  if (!aud.includes(DIGEST_AUDIENCE)) return { error: 'wrong audience' };
+  if (!(claims.exp > now) || (claims.nbf && claims.nbf > now + 60)) return { error: 'expired or not yet valid' };
+  if (claims.repository !== DIGEST_REPO || claims.ref !== 'refs/heads/main') return { error: `wrong repository or ref (${claims.repository} ${claims.ref})` };
+  if (!String(claims.workflow_ref || '').startsWith(`${DIGEST_REPO}/.github/workflows/daily-digest.yml@`)) return { error: 'wrong workflow' };
+  if (!['schedule', 'workflow_dispatch'].includes(claims.event_name)) return { error: `wrong event (${claims.event_name})` };
+  return { claims };
+}
+async function digestAuthorized(req) {
+  const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!supplied) return false;
+  const expected = process.env.DIGEST_TOKEN || '';
+  if (expected) {
+    const a = Buffer.from(supplied), b = Buffer.from(expected);
+    if (a.length === b.length && crypto.timingSafeEqual(a,b)) return true;
+  }
+  if (supplied.split('.').length !== 3) return false;
+  const v = await verifyDigestOidc(supplied);
+  if (v.error) console.warn(`Sales digest call refused: ${v.error}.`);
+  return !v.error;
+}
 const DIGEST_TZ_OFFSET_HOURS = 3; // East Africa Time (UTC+3), no daylight saving.
 const eatDate = (d = new Date()) => new Date(d.getTime() + DIGEST_TZ_OFFSET_HOURS * 3600000).toISOString().slice(0,10);
 function digestItems(list, now = new Date()) {
@@ -449,10 +497,8 @@ async function markDigestSent(day) {
 }
 app.post('/api/digest', async (req,res,next) => {
   try {
-    const expected = process.env.DIGEST_TOKEN || '';
-    const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
-    const a = Buffer.from(supplied), b = Buffer.from(expected);
-    if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(404).json({ok:false});
+    if (!rateLimit(`digest:${req.ip || 'unknown'}`, 20, 60 * 60 * 1000)) return res.status(429).json({ok:false});
+    if (!await digestAuthorized(req)) return res.status(404).json({ok:false});
     if (!OWNER_EMAIL || !mailProvider()) return res.status(503).json({ok:false,error:'Email is not configured (OWNER_EMAIL and RESEND_API_KEY or SMTP).'});
     const force = String(req.query.force || '') === '1', quiet = String(req.query.quiet || '') === '1', day = eatDate();
     if (!force && await digestSentOn() === day) return res.json({ok:true,sent:false,reason:'already sent today'});
