@@ -403,6 +403,69 @@ async function sendNotifications(e) {
 }
 
 
+// Daily sales digest: a morning email listing the leads that need action. An outside scheduler (the GitHub
+// Actions workflow in .github/workflows/daily-digest.yml) calls POST /api/digest with DIGEST_TOKEN; Render's
+// free plan sleeps, so an in-process timer would not fire reliably. Without DIGEST_TOKEN the endpoint is hidden.
+const DIGEST_TZ_OFFSET_HOURS = 3; // East Africa Time (UTC+3), no daylight saving.
+const eatDate = (d = new Date()) => new Date(d.getTime() + DIGEST_TZ_OFFSET_HOURS * 3600000).toISOString().slice(0,10);
+function digestItems(list, now = new Date()) {
+  const today = eatDate(now), items = [];
+  for (const q of list) {
+    if (!OPEN_STATUSES.includes(q.status)) continue;
+    const created = new Date(q.createdAt || q.created_at), fu = q.followUpAt || '';
+    let why = '';
+    if (q.status === 'New' && now - created > 86400000) why = 'Unanswered for 24h+';
+    else if (fu && fu < today) why = `Follow-up overdue (due ${fu})`;
+    else if (fu && fu === today) why = 'Follow up today';
+    if (why) items.push({ q, why, rank: why.startsWith('Unanswered') ? 0 : why.startsWith('Follow-up overdue') ? 1 : 2 });
+  }
+  return items.sort((a,b) => a.rank - b.rank || (Number(b.q.dealValue)||0) - (Number(a.q.dealValue)||0));
+}
+function digestEmail(list, now = new Date()) {
+  const items = digestItems(list, now);
+  const fresh = list.filter(q => now - new Date(q.createdAt || q.created_at) < 86400000);
+  const open = list.filter(q => OPEN_STATUSES.includes(q.status));
+  const openValue = open.reduce((t,q) => t + (Number(q.dealValue)||0), 0);
+  const kes = n => 'KES ' + Math.round(n).toLocaleString('en-KE');
+  const line = ({q,why}) => `${why}: ${q.name}${q.businessName ? ` (${q.businessName})` : ''} · ${q.status === 'Closed' ? 'Lost' : q.status}${q.projectType ? ` · ${q.projectType}` : ''}${q.dealValue ? ` · ${kes(q.dealValue)}` : ''} · ref ${refOf(q)}`;
+  const subject = items.length ? `Sales digest: ${items.length} lead${items.length === 1 ? '' : 's'} need${items.length === 1 ? 's' : ''} action today` : `Sales digest: ${fresh.length} new enquir${fresh.length === 1 ? 'y' : 'ies'}, nothing overdue`;
+  const text = [`Good morning,`, '', items.length ? 'Needs action today:' : 'Nothing is overdue today.', ...items.map(x => '- ' + line(x)), '',
+    `New in the last 24 hours: ${fresh.length}`, `Open pipeline: ${kes(openValue)} across ${open.length} lead${open.length === 1 ? '' : 's'}`, '', `Open the dashboard: ${SITE_URL}/owner`].join('\n');
+  const li = x => `<li style="margin:0 0 8px"><b style="color:${x.rank < 2 ? '#8a1c12' : '#7a4a00'}">${escHtml(x.why)}</b><br>${escHtml(line(x).slice(x.why.length + 2))}</li>`;
+  const html = brandEmail(`<div style="font-family:Arial,sans-serif;color:#14202c"><h2 style="color:#0b2540;margin:0 0 14px">Sales digest · ${escHtml(eatDate(now))}</h2>`
+    + (items.length ? `<p style="margin:0 0 8px"><b>Needs action today</b></p><ul style="padding-left:18px;line-height:1.5;margin:0 0 18px">${items.map(li).join('')}</ul>` : '<p>Nothing is overdue today.</p>')
+    + `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:14px"><tr><td style="padding:4px 18px 4px 0;color:#5f6d7a">New in the last 24 hours</td><td><b>${fresh.length}</b></td></tr><tr><td style="padding:4px 18px 4px 0;color:#5f6d7a">Open pipeline</td><td><b>${kes(openValue)}</b> across ${open.length} lead${open.length === 1 ? '' : 's'}</td></tr></table>`
+    + `<p><a href="${escHtml(SITE_URL)}/owner" style="display:inline-block;background:#0f8a83;color:#fff;text-decoration:none;padding:11px 20px;border-radius:999px;font-weight:bold">Open the dashboard</a></p></div>`);
+  return { subject, text, html, items: items.length, fresh: fresh.length };
+}
+// Remembers the last EAT date a digest went out, so a retried or repeated call sends at most one per day.
+async function digestSentOn() {
+  if (pool) { const r = await pool.query(`SELECT value FROM app_content WHERE key='digest' LIMIT 1`); return r.rows[0]?.value?.lastSent || ''; }
+  return readLocalJson(path.join(DATA_DIR, 'digest.json'), {}).lastSent || '';
+}
+async function markDigestSent(day) {
+  if (pool) await pool.query(`INSERT INTO app_content(key,value,updated_at) VALUES('digest',$1::jsonb,NOW()) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value, updated_at=NOW()`, [JSON.stringify({ lastSent: day })]);
+  else writeLocalJson(path.join(DATA_DIR, 'digest.json'), { lastSent: day });
+}
+app.post('/api/digest', async (req,res,next) => {
+  try {
+    const expected = process.env.DIGEST_TOKEN || '';
+    const supplied = String(req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+    const a = Buffer.from(supplied), b = Buffer.from(expected);
+    if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a,b)) return res.status(404).json({ok:false});
+    if (!OWNER_EMAIL || !mailProvider()) return res.status(503).json({ok:false,error:'Email is not configured (OWNER_EMAIL and RESEND_API_KEY or SMTP).'});
+    const force = String(req.query.force || '') === '1', quiet = String(req.query.quiet || '') === '1', day = eatDate();
+    if (!force && await digestSentOn() === day) return res.json({ok:true,sent:false,reason:'already sent today'});
+    const d = digestEmail(await listEnquiries());
+    // quiet=1 skips the email on days with nothing to act on and no new enquiries.
+    if (quiet && !force && !d.items && !d.fresh) return res.json({ok:true,sent:false,reason:'nothing to report'});
+    await sendMail({ to: OWNER_EMAIL, subject: d.subject, text: d.text, html: d.html });
+    await markDigestSent(day);
+    console.log(`Sales digest sent to ${OWNER_EMAIL}: ${d.items} action item(s), ${d.fresh} new.`);
+    res.json({ok:true,sent:true,items:d.items,fresh:d.fresh});
+  } catch(e){ console.error('Sales digest failed:', e.message); next(e); }
+});
+
 // Optional live email smoke test. Disabled unless EMAIL_TEST_TOKEN is set in the server environment.
 // It sends only to OWNER_EMAIL and is useful for verifying the same provider used by enquiry notifications.
 app.get('/api/_email-test', async (req,res) => {

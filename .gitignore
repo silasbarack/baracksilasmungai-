@@ -4,3 +4,4 @@ npm-debug.log*
 data/enquiries.json
 data/analytics.json
 .DS_Store
+data/digest.json

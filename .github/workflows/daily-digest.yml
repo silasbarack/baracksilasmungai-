@@ -1,0 +1,39 @@
+name: Daily sales digest
+
+# Emails the owner the leads that need action today. Runs Monday to Saturday at 06:47 EAT (03:47 UTC);
+# GitHub may start scheduled runs a little late. Run it by hand from the Actions tab at any time.
+on:
+  schedule:
+    - cron: '47 3 * * 1-6'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Send even if a digest already went out today'
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Send the digest
+        env:
+          DIGEST_TOKEN: ${{ secrets.DIGEST_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://baracksilasmungai.onrender.com' }}
+          FORCE: ${{ inputs.force && '1' || '0' }}
+        run: |
+          if [ -z "$DIGEST_TOKEN" ]; then echo "::error::Add the DIGEST_TOKEN repository secret (Settings > Secrets and variables > Actions)."; exit 1; fi
+          # Render's free plan sleeps; the first requests wake it, so retry for up to ~5 minutes.
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -sS -o body.json -w '%{http_code}' --max-time 90 -X POST \
+              -H "Authorization: Bearer $DIGEST_TOKEN" "$SITE_URL/api/digest?force=$FORCE") || code=000
+            echo "Attempt $i: HTTP $code $(cat body.json 2>/dev/null)"
+            if [ "$code" = 200 ]; then exit 0; fi
+            if [ "$code" = 404 ]; then echo "::error::Token rejected. DIGEST_TOKEN must match in GitHub and Render."; exit 1; fi
+            if [ "$code" = 503 ]; then echo "::error::Email is not configured on the server."; exit 1; fi
+            sleep 30
+          done
+          echo "::error::The site did not answer."; exit 1

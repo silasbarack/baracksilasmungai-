@@ -71,3 +71,23 @@ From the **Pipeline** tab with **Last 30 days** selected:
 Templates live in the site content under `salesTemplates` (Dashboard → Content). Each template has the fields `id`, `stage`, `label`, `subject` and `body`. The available placeholders are `{firstName}`, `{ref}`, `{project}`, `{kind}`, `{value}` and `{portfolioUrl}`.
 
 If `salesTemplates` is missing from the saved content, the defaults in `data/content.json` are used. To customise the templates, copy that array into the Content studio and save. The templates are never sent to public visitors.
+
+## 7. Daily digest email
+
+Every Monday to Saturday at about 06:47 EAT, the digest emails `OWNER_EMAIL` with:
+
+- the leads that need action that day: new enquiries unanswered for 24 hours or more, overdue follow-ups, and follow-ups due today
+- the number of new enquiries in the last 24 hours
+- the open pipeline value
+- a link to the dashboard
+
+A GitHub Actions workflow (`.github/workflows/daily-digest.yml`) sends it. It calls `POST /api/digest`, which also wakes the sleeping free Render instance. The server sends at most one digest per day, even if the job retries.
+
+**One-time setup**
+
+1. Create a long random token, for example with `openssl rand -hex 32`.
+2. In Render, open the service, go to **Environment**, and add `DIGEST_TOKEN` with that value. Email must already be working, which needs `OWNER_EMAIL` plus `RESEND_API_KEY` or SMTP.
+3. In GitHub, go to the repository's **Settings → Secrets and variables → Actions → New repository secret** and add `DIGEST_TOKEN` with the same value.
+4. Test it: in GitHub, open **Actions → Daily sales digest → Run workflow**, tick *force*, and run it. The email should arrive within a few minutes.
+
+Optional: change the time by editing the `cron` line in the workflow. It is in UTC, so 03:47 UTC is 06:47 EAT. Add `quiet=1` to the URL to skip the email on days with nothing to act on.
