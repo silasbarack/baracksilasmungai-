@@ -39,7 +39,7 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
-      # Daily sales digest; must match the GitHub repository secret of the same name.
+      # Optional: manual calls to POST /api/digest. The scheduled workflow authenticates with GitHub OIDC instead.
       - key: DIGEST_TOKEN
         sync: false
 databases:
