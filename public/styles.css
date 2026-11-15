@@ -473,3 +473,42 @@ html:not(.loaded) .hero .wrap>*>*,html:not(.loaded) .pagehero .wrap>*{opacity:0}
 .sp-bar span{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--teal),var(--teal2))}
 .send-progress.done .spinner{animation:none;border-color:var(--teal);background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12 4 4 8-8'/%3E%3C/svg%3E") center/70% no-repeat}
 .send-progress.done .sp-text{color:var(--teal-dark)}
+
+/* Owner sales pipeline */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:6px 0 18px}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff;display:grid;gap:4px}
+.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.kpi b{font-size:22px;color:var(--navy);font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12.5px}
+.ownercard{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px;background:#fff;min-width:0}
+.ownercard h3{margin:0 0 12px;font-size:16px;display:flex;align-items:center;gap:8px}
+.ownercard .count{display:inline-block;min-width:22px;padding:1px 7px;border-radius:999px;background:var(--navy);color:#fff;font-size:12px;text-align:center}
+.todo{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.todo li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-radius:10px;background:var(--soft)}
+.todo li .muted{flex:1 1 200px;font-size:13px}
+.due-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:#fdf1dc;color:#7a4a00}
+.due-overdue .due-chip,.enq.due-overdue .due-chip,.enq.due-stale .due-chip,.due-stale .due-chip{background:#fde4e1;color:#8a1c12}
+.enq.due-overdue,.enq.due-stale{border-left-color:#c0392b}
+.funnel{display:grid;gap:8px}
+.fstep{display:grid;grid-template-columns:minmax(120px,190px) 1fr 70px 120px;align-items:center;gap:10px;font-size:13.5px}
+.fstep b{text-align:right;color:var(--navy);font-variant-numeric:tabular-nums}
+.fstep small{color:var(--muted)}
+.fbar{height:14px;background:var(--soft);border-radius:4px;overflow:hidden}
+.fbar i{display:block;height:100%;background:var(--teal);border-radius:0 4px 4px 0}
+.ptable{width:100%;border-collapse:collapse;font-size:13.5px}
+.ptable th,.ptable td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+.ptable th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ptable .num{text-align:right;font-variant-numeric:tabular-nums}
+.tscroll{overflow-x:auto}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.pgrid .ownercard{margin:0}
+.muted.small{font-size:12.5px;margin:10px 0 0}
+.deal-row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 0}
+.deal-row label{display:grid;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600;flex:1 1 160px}
+.deal-row label[hidden]{display:none}
+.deal-row input,.deal-row select{padding:8px 10px;font-size:14px}
+.tpl-row select{width:auto;max-width:100%;padding:7px 10px;font-size:13px;border-radius:9px}
+.enq-hist{font-size:12px;margin:10px 0 0}
+.enq.flash{box-shadow:0 0 0 3px var(--amber)}
+#period{width:auto;padding:7px 10px;border-radius:9px;font-size:13px}
+@media(max-width:640px){.fstep{grid-template-columns:1fr 60px;}.fstep .fbar{grid-column:1/-1;grid-row:2}.fstep small{display:none}}

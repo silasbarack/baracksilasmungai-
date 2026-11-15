@@ -103,6 +103,12 @@ async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS analytics_event_idx ON analytics_events(event, created_at DESC);
+    ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS deal_value INTEGER;
+    ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS follow_up_at DATE;
+    ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS lost_reason TEXT NOT NULL DEFAULT '';
+    ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS source JSONB NOT NULL DEFAULT '{}'::jsonb;
+    ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS stage_history JSONB NOT NULL DEFAULT '[]'::jsonb;
+    CREATE INDEX IF NOT EXISTS enquiries_follow_up_idx ON enquiries(follow_up_at);
   `);
   const existing = await pool.query(`SELECT value FROM app_content WHERE key='content' LIMIT 1`);
   if (!existing.rowCount) {
@@ -136,34 +142,103 @@ async function saveContent(value) {
 async function listEnquiries() {
   if (pool) {
     const r = await pool.query(`SELECT * FROM enquiries ORDER BY created_at DESC`);
-    return r.rows.map(row => ({ ...row, createdAt: row.created_at, updatedAt: row.updated_at, businessName: row.business_name, preferredContact: row.preferred_contact, projectType: row.project_type, existingWebsite: row.existing_website, privateNote: row.private_note }));
+    return r.rows.map(fromRow);
   }
   return readLocalJson(ENQUIRIES_FILE, []);
 }
+function fromRow(row) {
+  const { created_at, updated_at, business_name, preferred_contact, project_type, existing_website, private_note, deal_value, follow_up_at, lost_reason, stage_history, ...rest } = row;
+  const fu = follow_up_at instanceof Date ? follow_up_at.toISOString().slice(0,10) : (follow_up_at || '');
+  return { ...rest, createdAt: created_at, updatedAt: updated_at, businessName: business_name, preferredContact: preferred_contact, projectType: project_type, existingWebsite: existing_website, privateNote: private_note, dealValue: deal_value ?? null, followUpAt: fu, lostReason: lost_reason || '', source: rest.source || {}, stageHistory: stage_history || [] };
+}
 async function insertEnquiry(e) {
   if (pool) {
-    await pool.query(`INSERT INTO enquiries(id,kind,name,business_name,email,phone,preferred_contact,project_type,features,budget,timeline,existing_website,description,status,private_note,fingerprint) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,'New','',$14)`, [e.id,e.kind,e.name,e.businessName,e.email,e.phone,e.preferredContact,e.projectType,JSON.stringify(e.features||[]),e.budget,e.timeline,e.existingWebsite,e.description,e.fingerprint]);
+    await pool.query(`INSERT INTO enquiries(id,kind,name,business_name,email,phone,preferred_contact,project_type,features,budget,timeline,existing_website,description,status,private_note,fingerprint,source,stage_history,follow_up_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,'New','',$14,$15::jsonb,$16::jsonb,$17)`, [e.id,e.kind,e.name,e.businessName,e.email,e.phone,e.preferredContact,e.projectType,JSON.stringify(e.features||[]),e.budget,e.timeline,e.existingWebsite,e.description,e.fingerprint,JSON.stringify(e.source||{}),JSON.stringify(e.stageHistory||[]),e.followUpAt||null]);
     return;
   }
   const rows = readLocalJson(ENQUIRIES_FILE, []);
   rows.unshift(e);
   writeLocalJson(ENQUIRIES_FILE, rows.slice(0, 2000));
 }
+const STATUSES = ['New','Contacted','Quoted','Won','Closed'];
+const OPEN_STATUSES = ['New','Contacted','Quoted'];
+// Default days until the next follow-up after a lead moves into a stage (see SALES_PLAYBOOK.md).
+const FOLLOW_UP_DAYS = { New: 1, Contacted: 3, Quoted: 3 };
+function addDays(days, from = new Date()) { const d = new Date(from); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0,10); }
+// Applies an owner edit to a stored enquiry (camelCase shape) and returns the changed record.
+function applyPatch(cur, patch) {
+  const next = { ...cur, stageHistory: Array.isArray(cur.stageHistory) ? [...cur.stageHistory] : [] };
+  if (patch.status !== undefined && patch.status !== null && patch.status !== '') {
+    if (!STATUSES.includes(patch.status)) throw Object.assign(new Error('Invalid status'), { status: 422 });
+    if (patch.status !== cur.status) {
+      next.status = patch.status;
+      next.stageHistory.push({ status: patch.status, at: new Date().toISOString() });
+      // Moving stage resets the follow-up clock unless the owner sets a date in the same edit.
+      if (patch.followUpAt === undefined) next.followUpAt = OPEN_STATUSES.includes(patch.status) ? addDays(FOLLOW_UP_DAYS[patch.status]) : '';
+    }
+  }
+  if (typeof patch.privateNote === 'string') next.privateNote = patch.privateNote.slice(0,5000);
+  if (patch.followUpAt !== undefined) {
+    const v = String(patch.followUpAt || '');
+    if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) throw Object.assign(new Error('Follow-up date must be YYYY-MM-DD.'), { status: 422 });
+    next.followUpAt = v;
+  }
+  if (patch.dealValue !== undefined) {
+    if (patch.dealValue === null || patch.dealValue === '') next.dealValue = null;
+    else {
+      const n = Math.round(Number(String(patch.dealValue).replace(/[,\s]/g,'')));
+      if (!Number.isFinite(n) || n < 0 || n > 100000000) throw Object.assign(new Error('Deal value must be a positive number of KES.'), { status: 422 });
+      next.dealValue = n;
+    }
+  }
+  if (typeof patch.lostReason === 'string') next.lostReason = clean(patch.lostReason, 300);
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
 async function updateEnquiry(id, patch) {
   if (pool) {
-    const allowedStatus = ['New','Contacted','Quoted','Won','Closed'];
-    if (patch.status && !allowedStatus.includes(patch.status)) throw new Error('Invalid status');
-    await pool.query(`UPDATE enquiries SET status=COALESCE($2,status), private_note=COALESCE($3,private_note), updated_at=NOW() WHERE id=$1`, [id, patch.status || null, typeof patch.privateNote === 'string' ? patch.privateNote.slice(0,5000) : null]);
-    return;
+    const r = await pool.query(`SELECT * FROM enquiries WHERE id=$1`, [id]);
+    if (!r.rowCount) throw Object.assign(new Error('Not found'), { status: 404 });
+    const n = applyPatch(fromRow(r.rows[0]), patch);
+    await pool.query(`UPDATE enquiries SET status=$2, private_note=$3, deal_value=$4, follow_up_at=$5, lost_reason=$6, stage_history=$7::jsonb, updated_at=NOW() WHERE id=$1`, [id, n.status, n.privateNote || '', n.dealValue, n.followUpAt || null, n.lostReason || '', JSON.stringify(n.stageHistory)]);
+    const { fingerprint, ...out } = n;
+    return out;
   }
-  if (patch.status && !['New','Contacted','Quoted','Won','Closed'].includes(patch.status)) throw new Error('Invalid status');
   const rows = readLocalJson(ENQUIRIES_FILE, []);
   const index = rows.findIndex(x => x.id === id);
-  if (index < 0) throw new Error('Not found');
-  if (patch.status) rows[index].status = patch.status;
-  if (typeof patch.privateNote === 'string') rows[index].privateNote = patch.privateNote.slice(0,5000);
-  rows[index].updatedAt = new Date().toISOString();
+  if (index < 0) throw Object.assign(new Error('Not found'), { status: 404 });
+  rows[index] = applyPatch(rows[index], patch);
   writeLocalJson(ENQUIRIES_FILE, rows);
+  const { fingerprint, ...out } = rows[index];
+  return out;
+}
+// Visit counts for the sales funnel, from first-party analytics events.
+async function analyticsSummary(days) {
+  const since = new Date(Date.now() - days * 86400000);
+  let events = [], projects = [];
+  if (pool) {
+    events = (await pool.query(`SELECT event, COUNT(*)::int AS n FROM analytics_events WHERE created_at >= $1 GROUP BY event`, [since])).rows;
+    projects = (await pool.query(`SELECT meta->>'project' AS project, COUNT(*)::int AS n FROM analytics_events WHERE created_at >= $1 AND event IN ('portfolio_view','live_demo') AND meta->>'project' IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10`, [since])).rows;
+  } else {
+    const rows = readLocalJson(ANALYTICS_FILE, []).filter(x => new Date(x.createdAt) >= since);
+    const ev = {}, pr = {};
+    for (const x of rows) {
+      ev[x.event] = (ev[x.event] || 0) + 1;
+      if ((x.event === 'portfolio_view' || x.event === 'live_demo') && x.meta?.project) pr[x.meta.project] = (pr[x.meta.project] || 0) + 1;
+    }
+    events = Object.entries(ev).map(([event,n]) => ({ event, n }));
+    projects = Object.entries(pr).map(([project,n]) => ({ project, n })).sort((a,b) => b.n - a.n).slice(0,10);
+  }
+  return { days, events: Object.fromEntries(events.map(x => [x.event, x.n])), projects };
+}
+function cleanSource(src) {
+  if (!src || typeof src !== 'object' || Array.isArray(src)) return {};
+  const out = {};
+  for (const k of ['utm_source','utm_medium','utm_campaign','utm_content','ref']) if (src[k]) out[k] = clean(src[k], 100).toLowerCase();
+  if (src.referrer) { try { out.referrer = new URL(clean(src.referrer, 300)).hostname.replace(/^www\./,''); } catch {} }
+  if (src.landing && String(src.landing).startsWith('/')) out.landing = clean(src.landing, 200);
+  if (src.firstSeen && !isNaN(new Date(src.firstSeen))) out.firstSeen = new Date(src.firstSeen).toISOString();
+  return out;
 }
 
 function parseCookies(req) {
@@ -355,6 +430,7 @@ app.get('/api/content', async (req,res,next) => {
       safe[section] = safe[section] || {};
       for (const [k,v] of Object.entries(defaults[section])) if (safe[section][k] === undefined || safe[section][k] === '') safe[section][k] = v;
     }
+    delete safe.salesTemplates;
     safe.articles = (safe.articles || []).filter(a => a.published);
     safe.testimonials = (safe.testimonials || []).filter(t => t.published);
     res.json({ok:true,content:safe});
@@ -382,6 +458,11 @@ app.post('/api/enquiries', async (req,res,next) => {
       description: clean(req.body.description,6000),
       status: 'New',
       privateNote: '',
+      source: cleanSource(req.body.source),
+      stageHistory: [{ status: 'New', at: new Date().toISOString() }],
+      followUpAt: addDays(FOLLOW_UP_DAYS.New),
+      dealValue: null,
+      lostReason: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       fingerprint: ''
@@ -449,8 +530,23 @@ app.post('/api/owner/logout', (req,res) => {
   res.json({ok:true});
 });
 app.get('/api/owner/session', (req,res) => res.json({ok:true,authenticated:Boolean(verifyToken(parseCookies(req)[COOKIE_NAME])?.owner)}));
-app.get('/api/owner/enquiries', ownerOnly, async (req,res,next) => { try { res.json({ok:true,storage:pool?'database':'file',enquiries:(await listEnquiries()).map(({fingerprint,...q}) => q)}); } catch(e){next(e);} });
-app.patch('/api/owner/enquiries/:id', ownerOnly, async (req,res,next) => { try { await updateEnquiry(req.params.id, {status:req.body.status,privateNote:req.body.privateNote}); res.json({ok:true}); } catch(e){next(e);} });
+app.get('/api/owner/enquiries', ownerOnly, async (req,res,next) => {
+  try {
+    const content = await getContent().catch(() => ({}));
+    const templates = content.salesTemplates || readLocalJson(CONTENT_FILE, {}).salesTemplates || [];
+    res.json({ok:true,storage:pool?'database':'file',templates,enquiries:(await listEnquiries()).map(({fingerprint,...q}) => q)});
+  } catch(e){next(e);}
+});
+app.patch('/api/owner/enquiries/:id', ownerOnly, async (req,res,next) => {
+  try {
+    const b = req.body || {};
+    const enquiry = await updateEnquiry(req.params.id, {status:b.status,privateNote:b.privateNote,followUpAt:b.followUpAt,dealValue:b.dealValue,lostReason:b.lostReason});
+    res.json({ok:true,enquiry});
+  } catch(e){ if (e.status) return res.status(e.status).json({ok:false,error:e.message}); next(e); }
+});
+app.get('/api/owner/analytics', ownerOnly, async (req,res,next) => {
+  try { const days = Math.min(365, Math.max(7, parseInt(req.query.days,10) || 90)); res.json({ok:true,...await analyticsSummary(days)}); } catch(e){next(e);}
+});
 app.get('/api/owner/content', ownerOnly, async (req,res,next) => { try { res.json({ok:true,content:await getContent()}); } catch(e){next(e);} });
 app.put('/api/owner/content', ownerOnly, async (req,res,next) => {
   try {
@@ -463,8 +559,8 @@ app.put('/api/owner/content', ownerOnly, async (req,res,next) => {
 app.get('/api/owner/export.csv', ownerOnly, async (req,res,next) => {
   try {
     const rows = await listEnquiries();
-    const cols = ['id','createdAt','kind','status','name','businessName','email','phone','preferredContact','projectType','budget','timeline','existingWebsite','description','privateNote'];
-    const esc = v => `"${String(v ?? '').replace(/"/g,'""').replace(/\r?\n/g,' ')}"`;
+    const cols = ['id','createdAt','kind','status','dealValue','followUpAt','lostReason','source','name','businessName','email','phone','preferredContact','projectType','budget','timeline','existingWebsite','description','privateNote'];
+    const esc = v => `"${String(v && typeof v === 'object' ? Object.entries(v).map(([k,x]) => `${k}=${x}`).join('; ') : v ?? '').replace(/"/g,'""').replace(/\r?\n/g,' ')}"`;
     const csv = [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c] ?? r[c.replace(/[A-Z]/g,m=>'_'+m.toLowerCase())])).join(','))].join('\n');
     res.setHeader('Content-Type','text/csv; charset=utf-8');
     res.setHeader('Content-Disposition','attachment; filename="baracksilasmungai-enquiries.csv"');

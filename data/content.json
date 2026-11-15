@@ -297,5 +297,56 @@
     "eyebrow": "Client reviews",
     "heading": "What clients say about working with me",
     "intro": "Feedback from the businesses and people I have built for."
-  }
+  },
+  "salesTemplates": [
+    {
+      "id": "first-response",
+      "stage": "New",
+      "label": "First response (same day)",
+      "subject": "Re: your {kind} [{ref}]",
+      "body": "Hello {firstName},\n\nThank you for reaching out about {project}. I have read your brief and I would like to understand a few details before I prepare a proposal:\n\n1. Who are the main users, and what should they be able to do on the site?\n2. Do you already have a domain, hosting, logo and content (text and photos)?\n3. Is there a date this needs to be live by?\n\nIf it is easier, we can cover this on a 20-minute call. What day and time suits you this week?\n\nRecent work: {portfolioUrl}\n\nBarack Silas Mungai"
+    },
+    {
+      "id": "discovery-call",
+      "stage": "Contacted",
+      "label": "Book a discovery call",
+      "subject": "Short call about {project} [{ref}]",
+      "body": "Hello {firstName},\n\nTo give you an accurate quotation for {project}, a short 20-minute call would help. I will walk you through similar work I have built and confirm scope, features and timing.\n\nWould one of these work: tomorrow at 10:00, or Thursday at 15:00 (EAT)? If not, suggest any time that suits you.\n\nBarack"
+    },
+    {
+      "id": "proposal-sent",
+      "stage": "Quoted",
+      "label": "Proposal sent",
+      "subject": "Proposal for {project} [{ref}]",
+      "body": "Hello {firstName},\n\nAs promised, here is the proposal for {project}. It covers the scope, milestones, timeline and pricing{value}.\n\nThe proposal is valid for 14 days. A 50% deposit confirms the start date, and the balance is due at launch.\n\nI am happy to adjust the scope to fit your budget. Reply with any questions, or we can go through it together on a quick call.\n\nBarack"
+    },
+    {
+      "id": "quote-follow-up",
+      "stage": "Quoted",
+      "label": "Quote follow-up (day 3)",
+      "subject": "Following up on your proposal [{ref}]",
+      "body": "Hello {firstName},\n\nI wanted to check whether you had a chance to review the proposal for {project}, and whether anything needs adjusting: scope, timeline or how the payment is split.\n\nIf it helps, I can split delivery into a smaller first phase so you can launch sooner.\n\nBarack"
+    },
+    {
+      "id": "last-check-in",
+      "stage": "Quoted",
+      "label": "Final check-in (day 10)",
+      "subject": "Should I keep your project open? [{ref}]",
+      "body": "Hello {firstName},\n\nI have not heard back about {project}, so I will assume the timing is not right for now and close the file on my side.\n\nIf anything changes, just reply to this message and I will pick it up from where we left off.\n\nAll the best,\nBarack"
+    },
+    {
+      "id": "won-kickoff",
+      "stage": "Won",
+      "label": "Won: kickoff",
+      "subject": "Let's get started on {project} [{ref}]",
+      "body": "Hello {firstName},\n\nThank you for choosing to work with me on {project}. Next steps:\n\n1. Kickoff call to confirm requirements and milestones.\n2. You share content, logo and any account access needed.\n3. I share a first design or working preview for your feedback.\n\nWhat time works for the kickoff call this week?\n\nBarack"
+    },
+    {
+      "id": "review-request",
+      "stage": "Won",
+      "label": "Ask for a review / referral",
+      "subject": "A quick favour [{ref}]",
+      "body": "Hello {firstName},\n\nIt was a pleasure building {project} with you. If you are happy with the result, would you write two or three sentences about the experience that I can publish on my website? A rating out of 5 helps too.\n\nAnd if you know another business that needs a website or system, I would be grateful for an introduction.\n\nThank you,\nBarack"
+    }
+  ]
 }
