@@ -125,10 +125,20 @@ function writeLocalJson(file, value) {
   fs.writeFileSync(temp, JSON.stringify(value, null, 2) + '\n');
   fs.renameSync(temp, file);
 }
+// The database copy of the content was seeded from content.json once, so projects added to the file later
+// would never appear. Any project whose slug the saved content lacks is slotted in at its position in the file.
+// To hide such a project, keep it in the saved content with "published": false rather than deleting it.
+function withNewProjects(content) {
+  const defaults = readLocalJson(CONTENT_FILE, {}).projects || [];
+  const projects = Array.isArray(content.projects) ? [...content.projects] : [];
+  const have = new Set(projects.map(p => p.slug));
+  defaults.forEach((p, i) => { if (!have.has(p.slug)) projects.splice(Math.min(i, projects.length), 0, p); });
+  return { ...content, projects };
+}
 async function getContent() {
   if (pool) {
     const r = await pool.query(`SELECT value FROM app_content WHERE key='content' LIMIT 1`);
-    return r.rows[0]?.value || {};
+    return withNewProjects(r.rows[0]?.value || {});
   }
   return readLocalJson(CONTENT_FILE, {});
 }

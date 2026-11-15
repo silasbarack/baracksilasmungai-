@@ -61,6 +61,37 @@
       }
     },
     {
+      "slug": "neurooption",
+      "title": "NeuroOption",
+      "category": "Fintech",
+      "status": "Personal product · Ongoing development",
+      "role": "Founder / Full-stack developer",
+      "summary": "A fixed-time trading platform concept with live chart workspaces, a free demo account, user accounts and M-Pesa deposit flows.",
+      "problem": "New traders need a calm, understandable trading experience with a risk-free way to practise before committing real money, and local payment options they already use.",
+      "solution": "A responsive trading platform with a demo-first onboarding, real-time style chart workspaces, account management and an API backend for users, balances and payment workflows.",
+      "features": [
+        "Real-time chart trading workspace",
+        "Free demo account",
+        "Sign-up, sign-in and account management",
+        "Technical indicators and multiple timeframes",
+        "M-Pesa deposit workflow",
+        "Desktop and mobile trading layouts"
+      ],
+      "tech": [
+        "React",
+        "JavaScript",
+        "Node.js",
+        "Prisma",
+        "REST API"
+      ],
+      "liveUrl": "https://neurooption-frontend.onrender.com",
+      "published": true,
+      "images": {
+        "desktop": "/assets/projects/neurooption-desktop.jpg",
+        "mobile": "/assets/projects/neurooption-mobile.jpg"
+      }
+    },
+    {
       "slug": "zawadimart",
       "title": "ZawadiMart",
       "category": "E-commerce",
