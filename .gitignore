@@ -1,0 +1,12 @@
+*.class
+target/
+out/
+build/
+.gradle/
+.idea/
+.vscode/
+*.log
+*.tmp
+.env
+*.iml
+.DS_Store

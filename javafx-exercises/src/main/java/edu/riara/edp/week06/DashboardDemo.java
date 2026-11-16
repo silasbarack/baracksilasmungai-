@@ -1,0 +1,3 @@
+package edu.riara.edp.week06;
+import javafx.application.Application;import javafx.scene.*;import javafx.scene.control.*;import javafx.scene.layout.*;import javafx.stage.Stage;
+public class DashboardDemo extends Application {public void start(Stage s){BorderPane root=new BorderPane();root.setTop(new Label("Student Dashboard"));root.setLeft(new VBox(10,new Button("Home"),new Button("Units"),new Button("Settings")));GridPane cards=new GridPane();cards.setHgap(20);cards.setVgap(20);cards.add(new Label("Units: 6"),0,0);cards.add(new Label("Status: Active"),1,0);cards.add(new Label("Course: EDP"),0,1);root.setCenter(cards);root.setBottom(new Label("Riara University - mockup"));s.setScene(new Scene(root,600,350));s.show();}public static void main(String[]a){launch(a);}}

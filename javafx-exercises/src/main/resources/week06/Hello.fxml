@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="edu.riara.edp.week06.FxmlController" spacing="12" alignment="CENTER"><Label text="FXML Event Handling"/><TextField fx:id="name" promptText="Your name"/><Button text="Greet" onAction="#sayHello"/><Label fx:id="greeting" text="Ready"/></VBox>

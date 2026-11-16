@@ -1,0 +1,3 @@
+package edu.riara.edp.week06;
+import javafx.application.Application;import javafx.scene.*;import javafx.scene.control.*;import javafx.scene.layout.*;import javafx.geometry.*;import javafx.stage.Stage;
+public class FirstWindow extends Application {public void start(Stage stage){Label message=new Label("Welcome to JavaFX!");Button button=new Button("Click me");button.setOnAction(e->message.setText("Event handled!"));VBox root=new VBox(15,message,button);root.setPadding(new Insets(20));root.setAlignment(Pos.CENTER);stage.setScene(new Scene(root,400,220));stage.setTitle("Week 6 - JavaFX");stage.show();}public static void main(String[]args){launch(args);}}
