@@ -1,0 +1,2 @@
+package edu.riara.edp.week08;
+import javafx.beans.property.*;public class ListenerDemo {public static void main(String[]a){IntegerProperty n=new SimpleIntegerProperty(0);n.addListener((o,oldValue,newValue)->System.out.println("Changed: "+oldValue+" -> "+newValue));n.addListener(o->System.out.println("Invalidated"));n.set(1);n.set(2);}}
