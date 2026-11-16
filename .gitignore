@@ -1,7 +1,12 @@
-node_modules/
+*.class
+target/
+out/
+build/
+.gradle/
+.idea/
+.vscode/
+*.log
+*.tmp
 .env
-npm-debug.log*
-data/enquiries.json
-data/analytics.json
+*.iml
 .DS_Store
-data/digest.json
