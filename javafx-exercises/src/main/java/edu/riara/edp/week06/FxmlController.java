@@ -1,2 +1,0 @@
-package edu.riara.edp.week06;
-import javafx.fxml.FXML;import javafx.scene.control.*;public class FxmlController {@FXML private TextField name;@FXML private Label greeting;@FXML private void sayHello(){greeting.setText("Hello, "+name.getText().trim());}}

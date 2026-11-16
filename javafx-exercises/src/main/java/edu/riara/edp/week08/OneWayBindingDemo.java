@@ -1,2 +1,0 @@
-package edu.riara.edp.week08;
-import javafx.application.Application;import javafx.scene.*;import javafx.scene.control.*;import javafx.scene.layout.*;import javafx.stage.Stage;public class OneWayBindingDemo extends Application {public void start(Stage s){Slider slider=new Slider(0,100,30);Label label=new Label();label.textProperty().bind(slider.valueProperty().asString("%.1f"));s.setScene(new Scene(new VBox(12,slider,label),400,160));s.show();}public static void main(String[]a){launch(a);}}

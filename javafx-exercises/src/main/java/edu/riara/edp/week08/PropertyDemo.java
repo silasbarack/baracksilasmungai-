@@ -1,2 +1,0 @@
-package edu.riara.edp.week08;
-import javafx.beans.property.*;public class PropertyDemo {public static void main(String[]a){StringProperty name=new SimpleStringProperty("Silas");IntegerProperty count=new SimpleIntegerProperty(1);name.addListener((o,oldValue,newValue)->System.out.println(oldValue+" -> "+newValue));count.addListener((o,oldValue,newValue)->System.out.println(oldValue+" -> "+newValue));name.set("Silas Mungai");count.set(2);}}

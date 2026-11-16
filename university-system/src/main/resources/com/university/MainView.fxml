@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.university.MainController" fx:id="mainPane">
+ <top><ToolBar><Label text="University Management System"/><Separator/><Button text="Students" onAction="#showStudents"/><Button text="Dashboard" onAction="#showDashboard"/></ToolBar></top>
+ <bottom><Label fx:id="statusLabel" text="Ready" /></bottom>
+</BorderPane>

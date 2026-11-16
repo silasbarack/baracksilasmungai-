@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.university.StudentController" spacing="12">
+ <padding><Insets top="18" left="18" right="18" bottom="18"/></padding>
+ <Label text="Student Management" style="-fx-font-weight: bold; -fx-font-size: 20px"/>
+ <HBox spacing="8"><TextField fx:id="regField" promptText="Registration Number"/><TextField fx:id="firstNameField" promptText="First Name"/><TextField fx:id="lastNameField" promptText="Last Name"/><Button fx:id="saveButton" text="Save Student" onAction="#handleSaveStudent"/><Button text="Refresh" onAction="#handleRefresh"/></HBox>
+ <TableView fx:id="studentTable" VBox.vgrow="ALWAYS"><columns><TableColumn fx:id="colReg" text="Registration Number" prefWidth="180"/><TableColumn fx:id="colFirst" text="First Name" prefWidth="160"/><TableColumn fx:id="colLast" text="Last Name" prefWidth="160"/></columns></TableView>
+ <Label fx:id="statusLabel" text="Ready"/>
+</VBox>

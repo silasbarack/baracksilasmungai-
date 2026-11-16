@@ -1,0 +1,28 @@
+name: RBCS 7312 Java Compile
+on:
+  push:
+    branches: ['coursework/rbcs-7312-weeks-1-10']
+  workflow_dispatch:
+jobs:
+  java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: |
+            javafx-exercises/pom.xml
+            university-system/pom.xml
+      - name: Compile standalone Java (Weeks 1–5)
+        run: |
+          for dir in week01 week02 week03 week04 week05; do
+            mkdir -p "/tmp/edp-classes/$dir"
+            javac -d "/tmp/edp-classes/$dir" "$dir"/*.java
+          done
+      - name: Compile JavaFX labs (Weeks 6–9)
+        run: mvn -B -f javafx-exercises/pom.xml clean compile
+      - name: Compile capstone (Week 10)
+        run: mvn -B -f university-system/pom.xml clean compile
