@@ -1,37 +1,127 @@
 <div align="center">
 
-# BARACK SILAS MUNGAI
+<img src="docs/previews/banner.jpg" alt="Barack Silas Mungai — Full-stack web developer" width="100%"/>
 
-### Full-Stack Web Developer · Business Systems · UI/UX
+# Barack Silas Mungai
 
-**Building digital products that solve real business problems.**
+**Full-Stack Web Developer · Business Systems · UI/UX**
 
-Based in Kenya · Bachelor of Business Information Technology (BBIT), Riara University
+<sub>Based in Kenya · Working remotely worldwide · BBIT, Riara University</sub>
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-Visit_Website-0B2540?style=for-the-badge&logo=googlechrome&logoColor=white)](https://baracksilasmungai.onrender.com)
-[![Email](https://img.shields.io/badge/Email-Get_in_Touch-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:silasbarack5@gmail.com)
-[![GitHub](https://img.shields.io/badge/GitHub-silasbarack-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/silasbarack)
+<br/>
+
+[![Portfolio](https://img.shields.io/badge/Portfolio-View_on_GitHub-C9A45C?style=for-the-badge&logo=github&logoColor=white)](https://github.com/silasbarack/baracksilasmungai-)
+[![Email](https://img.shields.io/badge/Email-Start_a_project-0B1220?style=for-the-badge&logo=gmail&logoColor=EA4335)](mailto:silasbarack5@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-silasbarack-0B1220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/silasbarack)
+
+<br/>
+
+<table>
+<tr>
+<td align="center" width="200"><h3>3</h3><sub>Products with live previews</sub></td>
+<td align="center" width="200"><h3>Full-stack</h3><sub>Interface to database</sub></td>
+<td align="center" width="200"><h3>M-Pesa</h3><sub>&amp; card payment flows</sub></td>
+<td align="center" width="200"><h3>1 day</h3><sub>Typical reply time</sub></td>
+</tr>
+</table>
 
 </div>
 
 ---
 
-## 👋 About Me
+## ✦ About
 
-I'm **Barack Silas Mungai**, a Kenya-based web developer and BBIT student at Riara University. I design and develop responsive business websites, web applications, and custom systems that connect intuitive interfaces with dependable backend services.
+I'm **Barack Silas Mungai**, a Kenya-based web developer and BBIT student at Riara University. I design and build responsive business websites, web applications and custom systems that pair clean interfaces with dependable backend services.
 
-My work focuses on:
+<table>
+<tr>
+<td width="50%" valign="top">
 
-- **Custom websites and business platforms** — professional, responsive digital experiences.
-- **Booking and event-ticketing systems** — event discovery, tickets, customer accounts, and organizer workflows.
-- **E-commerce** — product catalogues, shopping carts, checkout interfaces, and payment integrations.
-- **Backend engineering** — REST APIs, authentication, databases, administrative dashboards, and operational workflows.
-- **Fintech-style applications** — trading interfaces, real-time data experiences, user accounts, and payment workflows.
-- **Deployment and ongoing support** — helping projects move from development to production.
+**What I build**
+- Custom websites &amp; business platforms
+- Booking &amp; event-ticketing systems
+- E-commerce stores with checkout
+- Dashboards &amp; admin tools
 
-I work with clients **remotely**, using online meetings, clear milestones, and structured communication.
+</td>
+<td width="50%" valign="top">
 
-## 🧰 Technologies & Tools
+**How I work**
+- REST APIs, auth &amp; role-based access
+- M-Pesa &amp; card payment workflows
+- Clear milestones &amp; remote collaboration
+- Deployment, handover &amp; ongoing support
+
+</td>
+</tr>
+</table>
+
+---
+
+## ✦ Selected Work
+
+### 01 · TicketFlow Kenya
+**Event ticketing platform** · <sub>`Personal product · Active development`</sub>
+
+<a href="https://github.com/silasbarack/ticketflow-kenya"><img src="docs/previews/ticketflow-kenya.jpg" alt="TicketFlow Kenya — desktop and mobile preview" width="100%"/></a>
+
+A platform for discovering events across Kenya, selling tickets and running organizer workflows — built for a mobile-first audience that pays with M-Pesa.
+
+- Event discovery by category, city and date
+- Ticket categories with QR-ticket workflow
+- Customer accounts and organizer features
+- Payment integration architecture (M-Pesa & cards)
+
+![React](https://img.shields.io/badge/React-0B1220?style=flat-square&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-0B1220?style=flat-square&logo=typescript&logoColor=3178C6) ![NestJS](https://img.shields.io/badge/NestJS-0B1220?style=flat-square&logo=nestjs&logoColor=E0234E) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0B1220?style=flat-square&logo=postgresql&logoColor=4169E1) ![Prisma](https://img.shields.io/badge/Prisma-0B1220?style=flat-square&logo=prisma&logoColor=white)
+
+[**Repository** ↗](https://github.com/silasbarack/ticketflow-kenya) · [**Live site** ↗](https://ticketflow-frontend-w47s.onrender.com)
+
+### 02 · NeuroOption
+**Fintech trading platform** · <sub>`Personal product · Ongoing development`</sub>
+
+<a href="https://github.com/silasbarack/neurooption-frontend"><img src="docs/previews/neurooption.jpg" alt="NeuroOption — desktop and mobile preview" width="100%"/></a>
+
+A fixed-time trading platform concept with live chart workspaces, a free demo account, user accounts and M-Pesa deposit flows.
+
+- Real-time chart workspace and trading dashboard
+- Demo and live accounts with authentication
+- Account management and M-Pesa deposit flows
+- Separate frontend and backend services
+
+![React](https://img.shields.io/badge/React-0B1220?style=flat-square&logo=react&logoColor=61DAFB) ![Node.js](https://img.shields.io/badge/Node.js-0B1220?style=flat-square&logo=nodedotjs&logoColor=5FA04E) ![Prisma](https://img.shields.io/badge/Prisma-0B1220?style=flat-square&logo=prisma&logoColor=white) ![WebSockets](https://img.shields.io/badge/WebSockets-0B1220?style=flat-square&logo=socketdotio&logoColor=white)
+
+[**Frontend** ↗](https://github.com/silasbarack/neurooption-frontend) · [**Backend** ↗](https://github.com/silasbarack/neurooption-backend)
+
+### 03 · ZawadiMart
+**E-commerce storefront** · <sub>`Demonstration project`</sub>
+
+<a href="https://github.com/silasbarack/zawadimart-premium"><img src="docs/previews/zawadimart.jpg" alt="ZawadiMart — desktop and mobile preview" width="100%"/></a>
+
+A modern, responsive storefront demonstrating product browsing, cart and checkout presentation with Kenyan payment options.
+
+- Product catalogue with category browsing
+- Shopping cart and checkout presentation
+- M-Pesa, Visa and Mastercard payment display
+- Mobile-first responsive layout
+
+![HTML5](https://img.shields.io/badge/HTML5-0B1220?style=flat-square&logo=html5&logoColor=E34F26) ![CSS](https://img.shields.io/badge/CSS-0B1220?style=flat-square&logo=css&logoColor=663399) ![JavaScript](https://img.shields.io/badge/JavaScript-0B1220?style=flat-square&logo=javascript&logoColor=F7DF1E)
+
+[**Repository** ↗](https://github.com/silasbarack/zawadimart-premium)
+
+<details>
+<summary><b>More projects</b></summary>
+<br/>
+
+| Project | Description | Links |
+|---|---|---|
+| **SafariStay Kenya** | Hotel booking demonstration with accommodation listings, discovery and responsive booking interfaces. *Demo project.* | [Repository](https://github.com/silasbarack/safaristay-kenya) · [Demo](https://safaristay-kenya.onrender.com) |
+| **Personal Portfolio** | Website-development services portfolio with project case studies, enquiry forms, a sales pipeline and owner-side management. | [Repository](https://github.com/silasbarack/baracksilasmungai-) |
+
+</details>
+
+---
+
+## ✦ Technologies & Tools
 
 The logos below represent the technologies in my toolkit. Mobile app development is listed separately as an **area of learning and exploration**, not a claim of shipped mobile apps.
 
@@ -83,26 +173,21 @@ The logos below represent the technologies in my toolkit. Mobile app development
 ![Render](https://img.shields.io/badge/Render-111111?style=flat-square&logo=render&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-## 🚀 Selected Projects
-
-| Project | Description | Links |
-|---|---|---|
-| **TicketFlow Kenya** | Event-ticketing platform with ticket categories, QR-ticket workflows, customer accounts, organizer features, and payment integration architecture. **Personal product / active development.** | [Repository](https://github.com/silasbarack/ticketflow-kenya) · [Live site](https://ticketflow-frontend-w47s.onrender.com) |
-| **NeuroOption** | Fintech-style binary options trading platform concept, with trading dashboards, chart experiences, authentication, account management, and backend services. **Personal product / ongoing development.** | [Frontend](https://github.com/silasbarack/neurooption-frontend) · [Backend](https://github.com/silasbarack/neurooption-backend) |
-| **SafariStay Kenya** | Hotel booking demonstration with accommodation listings, discovery, and responsive booking interfaces. **Demo project.** | [Repository](https://github.com/silasbarack/safaristay-kenya) · [Demo](https://safaristay-kenya.onrender.com) |
-| **ZawadiMart** | Responsive e-commerce demonstration with a modern storefront, product browsing, shopping cart and checkout presentation. **Demo project.** | [Repository](https://github.com/silasbarack/zawadimart-premium) |
-| **Personal Portfolio** | Website development services portfolio, with project case studies, enquiry forms, service information and owner-side management features. | [Repository](https://github.com/silasbarack/baracksilasmungai-) · [Website](https://baracksilasmungai.onrender.com) |
-
-## 🤝 Let's Build Something Useful
-
-I help businesses and organizations turn ideas into polished websites and practical web-based systems, with a focus on clear requirements, responsive design, integration, testing and reliable handover.
-
-**Available for remote development engagements** — business websites, custom dashboards, booking platforms, e-commerce systems, and API-driven applications.
-
-**📧 Email:** [silasbarack5@gmail.com](mailto:silasbarack5@gmail.com)  
-**🌐 Portfolio:** [baracksilasmungai.onrender.com](https://baracksilasmungai.onrender.com)  
-**🐙 GitHub:** [github.com/silasbarack](https://github.com/silasbarack)
-
 ---
 
-<div align="center"><sub>Official technology brand marks sourced from Simple Icons. Each logo remains the trademark of its respective owner.</sub></div>
+<div align="center">
+
+## ✦ Let's Build Something Useful
+
+I help businesses and organisations turn ideas into polished websites and practical web-based systems — with clear requirements, responsive design, integration, testing and a reliable handover.
+
+**Available for remote engagements:** business websites · custom dashboards · booking platforms · e-commerce · API-driven applications
+
+[![Email me](https://img.shields.io/badge/silasbarack5@gmail.com-C9A45C?style=for-the-badge&logo=gmail&logoColor=white)](mailto:silasbarack5@gmail.com)
+[![Portfolio](https://img.shields.io/badge/Portfolio_on_GitHub-0B1220?style=for-the-badge&logo=github&logoColor=white)](https://github.com/silasbarack/baracksilasmungai-)
+
+<br/>
+
+<sub>Preview images are generated from real project screenshots with <code>node tools/gen-previews.js</code>. Technology brand marks are from Simple Icons and remain the trademarks of their owners.</sub>
+
+</div>
