@@ -25,6 +25,12 @@
 </tr>
 </table>
 
+<sub><b>PAYMENTS I INTEGRATE</b></sub>
+<br/><br/>
+<img src="https://commons.wikimedia.org/wiki/Special:FilePath/M-PESA_LOGO-01.svg?width=320" height="34" alt="M-Pesa logo"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="docs/brand/visa.svg" height="28" alt="Visa logo"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="docs/brand/mastercard.svg" height="40" alt="Mastercard logo"/>
+
 </div>
 
 ---
@@ -165,6 +171,14 @@ The logos below represent the technologies in my toolkit. Mobile app development
 <td align="center" width="125"><img src="https://cdn.simpleicons.org/mongodb/47A248" width="46" height="46" alt="MongoDB logo"/><br/><b>MongoDB</b></td>
 </tr></table>
 
+### 💳 Payment Integrations
+
+<table><tr>
+<td align="center" width="170" height="90"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/M-PESA_LOGO-01.svg?width=320" height="40" alt="M-Pesa logo"/><br/><b>M-Pesa</b><br/><sub>STK Push · Daraja API</sub></td>
+<td align="center" width="170" height="90"><img src="docs/brand/visa.svg" height="32" alt="Visa logo"/><br/><b>Visa</b><br/><sub>Card checkout</sub></td>
+<td align="center" width="170" height="90"><img src="docs/brand/mastercard.svg" height="44" alt="Mastercard logo"/><br/><b>Mastercard</b><br/><sub>Card checkout</sub></td>
+</tr></table>
+
 ### 🛠️ Additional Tools
 
 ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
@@ -188,6 +202,6 @@ I help businesses and organisations turn ideas into polished websites and practi
 
 <br/>
 
-<sub>Preview images are generated from real project screenshots with <code>node tools/gen-previews.js</code>. Technology brand marks are from Simple Icons and remain the trademarks of their owners.</sub>
+<sub>Preview images are generated from real project screenshots with <code>node tools/gen-previews.js</code>. Technology brand marks are from Simple Icons; Visa and Mastercard marks from the CC0 <a href="https://github.com/gilbarbara/logos">SVG Logos</a> set; the M-Pesa logo from Wikimedia Commons. All logos remain the trademarks of their respective owners.</sub>
 
 </div>

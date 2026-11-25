@@ -512,3 +512,9 @@ html:not(.loaded) .hero .wrap>*>*,html:not(.loaded) .pagehero .wrap>*{opacity:0}
 .enq.flash{box-shadow:0 0 0 3px var(--amber)}
 #period{width:auto;padding:7px 10px;border-radius:9px;font-size:13px}
 @media(max-width:640px){.fstep{grid-template-columns:1fr 60px;}.fstep .fbar{grid-column:1/-1;grid-row:2}.fstep small{display:none}}
+
+/* Official payment logos (M-Pesa, Visa, Mastercard) on payment tiles and service cards */
+.paylogos{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+.paylogos img{display:block;width:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 9px;box-sizing:content-box}
+.paylogos .pl-mpesa{height:22px}.paylogos .pl-visa{height:13px;padding:9px 11px}.paylogos .pl-mc{height:23px;padding:4px 9px}
+.card .paylogos{margin:2px 0 14px}
